@@ -4,6 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import { useNotification } from '../hooks/useApi';
 import type { Game, Player, ChatMessage } from '../types';
 import { Clock, CheckCircle2, Trophy, Shuffle, Trash2, ArrowLeft, MessageSquare, ChevronDown, ChevronUp } from 'lucide-react';
+import FloatingInput from '../components/FloatingInput';
 
 interface SubGame {
   sgid: number;
@@ -150,14 +151,14 @@ function NewGameModal({ players, onClose, onRecorded, apiFetch, eventId }: NewGa
                   <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--green-dark)', marginBottom: 4 }}>TEAM A</div>
                   <div style={{ fontSize: 13 }}>{team1.join(', ')}</div>
                 </div>
-                <input className="form-input" type="number" min={0} max={99} value={team1score} onChange={e => setTeam1score(e.target.value)} placeholder="Team A score" required />
+                <FloatingInput label="Team A score" type="number" min={0} max={99} value={team1score} onChange={setTeam1score} required />
               </div>
               <div>
                 <div style={{ background: 'var(--yellow-light)', borderRadius: 'var(--radius-md)', padding: '10px 12px', marginBottom: 8 }}>
                   <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--yellow-dark)', marginBottom: 4 }}>TEAM B</div>
                   <div style={{ fontSize: 13 }}>{team2.join(', ')}</div>
                 </div>
-                <input className="form-input" type="number" min={0} max={99} value={team2score} onChange={e => setTeam2score(e.target.value)} placeholder="Team B score" required />
+                <FloatingInput label="Team B score" type="number" min={0} max={99} value={team2score} onChange={setTeam2score} required />
               </div>
             </div>
             {error && <div style={{ color: 'var(--danger)', fontSize: 13, marginBottom: 10 }}>{error}</div>}
@@ -446,8 +447,19 @@ export default function EventDetail() {
                 })}
               </div>
               <form onSubmit={handleSendChat} style={{ display: 'flex', gap: 8 }}>
-                <input className="form-input" value={chatMsg} onChange={e => setChatMsg(e.target.value)} placeholder="Say something..." style={{ flex: 1 }} />
-                <button type="submit" className="btn btn-primary btn-sm">Send</button>
+                <input
+                  value={chatMsg}
+                  onChange={e => setChatMsg(e.target.value)}
+                  placeholder="Say something..."
+                  style={{
+                    flex: 1, border: '1.5px solid var(--gray-300)', borderRadius: 99, padding: '9px 16px',
+                    fontSize: 14, fontFamily: 'var(--font-body)', color: 'var(--charcoal)', outline: 'none',
+                    background: 'var(--gray-100)', transition: 'border-color 0.15s ease',
+                  }}
+                  onFocus={e => { e.currentTarget.style.borderColor = 'var(--green)'; }}
+                  onBlur={e => { e.currentTarget.style.borderColor = 'var(--gray-300)'; }}
+                />
+                <button type="submit" className="btn btn-primary btn-sm btn-pill">Send</button>
               </form>
             </div>
           )}

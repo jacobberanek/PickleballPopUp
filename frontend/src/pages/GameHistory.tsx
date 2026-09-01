@@ -60,12 +60,22 @@ export default function GameHistory() {
         </div>
       </div>
 
-      <div style={{ display: 'flex', gap: 8, marginBottom: 20 }}>
-        {([['all', 'All Games'], ['mine', 'My Games']] as const).map(([v, l]) => (
-          <button key={v} onClick={() => setFilter(v)} className="btn btn-sm" style={{
-            background: filter === v ? 'var(--charcoal)' : 'var(--white)',
+      <div style={{
+        position: 'relative', display: 'inline-flex', background: 'var(--gray-100)',
+        borderRadius: 'var(--radius-sm)', padding: 3, marginBottom: 20,
+      }}>
+        <div style={{
+          position: 'absolute', top: 3, bottom: 3, left: 3, width: 'calc(50% - 3px)',
+          background: 'var(--charcoal)', borderRadius: 3,
+          transform: filter === 'mine' ? 'translateX(100%)' : 'translateX(0)',
+          transition: 'transform 0.2s ease',
+        }} />
+        {([['all', 'All games'], ['mine', 'My games']] as const).map(([v, l]) => (
+          <button key={v} onClick={() => setFilter(v)} style={{
+            position: 'relative', zIndex: 1, padding: '7px 20px', fontSize: 13, fontWeight: 600,
             color: filter === v ? 'var(--white)' : 'var(--gray-700)',
-            border: '1.5px solid', borderColor: filter === v ? 'var(--charcoal)' : 'var(--gray-300)',
+            background: 'none', border: 'none', cursor: 'pointer', minWidth: 108,
+            transition: 'color 0.2s ease',
           }}>{l}</button>
         ))}
       </div>

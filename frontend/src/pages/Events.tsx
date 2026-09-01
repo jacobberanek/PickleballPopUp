@@ -4,6 +4,7 @@ import { useApi, useNotification } from '../hooks/useApi';
 import { useAuth } from '../context/AuthContext';
 import type { Game } from '../types';
 import { Clock, AlertTriangle, Calendar, ChevronRight } from 'lucide-react';
+import FloatingInput from '../components/FloatingInput';
 
 function CreateEventModal({ onClose, onCreated }: { onClose: () => void; onCreated: () => void }) {
   const { apiFetch, username } = useAuth();
@@ -34,14 +35,8 @@ function CreateEventModal({ onClose, onCreated }: { onClose: () => void; onCreat
       <div className="modal" onClick={e => e.stopPropagation()}>
         <div className="modal-title">Create New Event</div>
         <form onSubmit={handleSubmit}>
-          <div className="form-group">
-            <label className="form-label">Location & Time</label>
-            <input className="form-input" value={location} onChange={e => setLocation(e.target.value)} placeholder="e.g. The Barn - 11AM" required />
-          </div>
-          <div className="form-group">
-            <label className="form-label">Date</label>
-            <input className="form-input" type="date" value={date} onChange={e => setDate(e.target.value)} required />
-          </div>
+          <FloatingInput label="Location & Time" value={location} onChange={setLocation} required />
+          <FloatingInput label="Date" type="date" value={date} onChange={setDate} required />
           {error && <div style={{ color: 'var(--danger)', fontSize: 13, marginBottom: 10 }}>{error}</div>}
           <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
             <button type="button" className="btn btn-secondary" onClick={onClose}>Cancel</button>
@@ -85,10 +80,7 @@ function HeroEvent({ event }: { event: Game }) {
             <Clock size={13} /> {formatFullTime(event.gametime ?? event.GameTime)}
           </div>
         </div>
-        <div style={{
-          background: 'var(--yellow)', color: 'var(--yellow-dark)', fontWeight: 700, fontSize: 13,
-          padding: '11px 22px', borderRadius: 'var(--radius-sm)', flexShrink: 0, display: 'flex', alignItems: 'center', gap: 6,
-        }}>
+        <div className="hero-cta">
           View event <ChevronRight size={15} />
         </div>
       </div>
