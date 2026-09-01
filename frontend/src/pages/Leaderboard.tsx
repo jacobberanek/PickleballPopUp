@@ -1,6 +1,7 @@
 import { useApi } from '../hooks/useApi';
 import { useAuth } from '../context/AuthContext';
 import type { LeaderboardEntry } from '../types';
+import { Trophy, Download } from 'lucide-react';
 
 const MEDALS = ['🥇', '🥈', '🥉'];
 
@@ -56,7 +57,7 @@ export default function Leaderboard() {
         </div>
         {players.length > 0 && (
           <button className="btn btn-secondary btn-sm" onClick={() => exportCSV(players)}>
-            ⬇ Export CSV
+            <Download size={13} /> Export CSV
           </button>
         )}
       </div>
@@ -82,7 +83,7 @@ export default function Leaderboard() {
 
       {!loading && players.length === 0 && (
         <div className="empty-state">
-          <div className="empty-icon">🏆</div>
+          <div className="empty-icon"><Trophy size={40} color="var(--gray-300)" /></div>
           <div className="empty-title">No stats yet</div>
           <div>Complete an event with recorded games to see rankings!</div>
         </div>
@@ -105,7 +106,7 @@ export default function Leaderboard() {
               <div key={p.displayName} style={{
                 display: 'grid', gridTemplateColumns: '44px 1fr 56px 56px 56px 90px', gap: 8,
                 padding: '13px 20px', alignItems: 'center',
-                borderTop: idx > 0 ? '1px solid #edf0f4' : 'none',
+                borderTop: idx > 0 ? '1px solid var(--line)' : 'none',
                 background: isMe ? 'var(--green-light)' : 'transparent',
               }}>
                 <div style={{ textAlign: 'center', fontSize: rank <= 3 ? 20 : 13, fontWeight: 700, color: 'var(--gray-500)' }}>
@@ -122,10 +123,10 @@ export default function Leaderboard() {
                 <div style={{ textAlign: 'center', color: 'var(--gray-500)' }}>{p.losses}</div>
                 <div style={{ textAlign: 'center', color: 'var(--gray-500)', fontSize: 13 }}>{p.totalG}</div>
                 <div>
-                  <div style={{ fontSize: 13, fontWeight: 700, color: p.winPct >= 60 ? 'var(--green-dark)' : p.winPct >= 40 ? 'var(--charcoal)' : 'var(--danger)' }}>
+                  <div style={{ fontFamily: 'var(--font-display)', fontWeight: 800, fontSize: 20, lineHeight: 1, color: p.winPct >= 60 ? 'var(--green-dark)' : p.winPct >= 40 ? 'var(--charcoal)' : 'var(--danger)' }}>
                     {p.winPct}%
                   </div>
-                  <div className="win-bar-wrap" style={{ width: 70 }}>
+                  <div className="win-bar-wrap" style={{ width: 70, marginTop: 4 }}>
                     <div className="win-bar" style={{ width: `${p.winPct}%` }} />
                   </div>
                 </div>

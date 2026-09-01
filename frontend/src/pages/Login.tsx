@@ -27,9 +27,9 @@ export default function Login() {
   return (
     <div style={{ minHeight: '100vh', background: 'var(--charcoal)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
       <div style={{ width: '100%', maxWidth: 380 }}>
-        <div style={{ textAlign: 'center', marginBottom: 32 }}>
-          <div style={{ fontFamily: 'Barlow Condensed, sans-serif', fontSize: 26, fontWeight: 700, color: 'var(--white)', letterSpacing: 1 }}>BARN BOYS SCOREBOOK</div>
-          <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.45)', marginTop: 4 }}>Enter your username to get started</div>
+        <div className="court-accent" style={{ textAlign: 'center', marginBottom: 32, paddingRight: 14 }}>
+          <div style={{ fontFamily: 'var(--font-display)', fontWeight: 800, fontSize: 30, color: 'var(--white)', letterSpacing: 0.5 }}>BARN BOYS SCOREBOOK</div>
+          <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.45)', marginTop: 6 }}>Enter your username to get started</div>
         </div>
 
         <div className="card" style={{ padding: 28 }}>

@@ -1,11 +1,12 @@
 import { useState } from 'react';
 import { Outlet, NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { Calendar, Trophy, ClipboardList, Menu, X, LogOut } from 'lucide-react';
 
 const navItems = [
-  { to: '/events', label: 'Events', icon: '📅' },
-  { to: '/leaderboard', label: 'Leaderboard', icon: '🏆' },
-  { to: '/history', label: 'Game History', icon: '📋' },
+  { to: '/events', label: 'Events', icon: Calendar },
+  { to: '/leaderboard', label: 'Leaderboard', icon: Trophy },
+  { to: '/history', label: 'Game History', icon: ClipboardList },
 ];
 
 export default function Layout() {
@@ -25,9 +26,9 @@ export default function Layout() {
         background: 'var(--charcoal)', padding: '12px 16px',
         alignItems: 'center', justifyContent: 'space-between',
       }} className="mobile-bar">
-        <div style={{ fontFamily: 'Barlow Condensed, sans-serif', fontSize: 18, fontWeight: 700, color: 'white' }}>PICKLEBALL POP-UP</div>
-        <button onClick={() => setMenuOpen(!menuOpen)} style={{ color: 'white', background: 'none', border: 'none', fontSize: 22, cursor: 'pointer' }}>
-          {menuOpen ? '✕' : '☰'}
+        <div style={{ fontFamily: 'var(--font-display)', fontWeight: 800, fontSize: 20, color: 'white' }}>PICKLEBALL POP-UP</div>
+        <button onClick={() => setMenuOpen(!menuOpen)} style={{ color: 'white', background: 'none', border: 'none', cursor: 'pointer', display: 'flex' }}>
+          {menuOpen ? <X size={22} /> : <Menu size={22} />}
         </button>
       </div>
 
@@ -37,7 +38,7 @@ export default function Layout() {
           position: 'fixed', top: 52, left: 0, right: 0, zIndex: 199,
           background: 'var(--charcoal)', padding: '8px 12px 16px',
         }} className="mobile-menu">
-          {navItems.map(({ to, label, icon }) => (
+          {navItems.map(({ to, label, icon: Icon }) => (
             <NavLink key={to} to={to} onClick={() => setMenuOpen(false)} style={({ isActive }) => ({
               display: 'flex', alignItems: 'center', gap: 10, padding: '12px 12px',
               borderRadius: 'var(--radius-md)', marginBottom: 2, fontSize: 15, fontWeight: 500,
@@ -45,7 +46,7 @@ export default function Layout() {
               background: isActive ? 'rgba(255,255,255,0.1)' : 'transparent',
               textDecoration: 'none',
             })}>
-              <span>{icon}</span>{label}
+              <Icon size={16} />{label}
             </NavLink>
           ))}
           <div style={{ borderTop: '1px solid rgba(255,255,255,0.1)', marginTop: 8, paddingTop: 12, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
@@ -61,17 +62,17 @@ export default function Layout() {
         flexDirection: 'column', padding: '24px 0', position: 'fixed',
         top: 0, left: 0, bottom: 0, zIndex: 100,
       }}>
-        <div style={{ padding: '0 20px 24px', borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
+        <div className="court-accent" style={{ padding: '0 20px 24px', borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
             <div>
-              <div style={{ fontFamily: 'Barlow Condensed, sans-serif', fontSize: 17, fontWeight: 700, color: 'var(--white)', letterSpacing: 0.5 }}>PICKLEBALL POP-UP</div>
-              <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.4)', letterSpacing: 0.5 }}>SCOREBOOK</div>
+              <div style={{ fontFamily: 'var(--font-display)', fontWeight: 800, fontSize: 19, color: 'var(--white)', letterSpacing: 0.5 }}>PICKLEBALL POP-UP</div>
+              <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.4)', letterSpacing: 1, marginTop: 2 }}>SCOREBOOK</div>
             </div>
           </div>
         </div>
 
         <nav style={{ flex: 1, padding: '14px 10px' }}>
-          {navItems.map(({ to, label, icon }) => (
+          {navItems.map(({ to, label, icon: Icon }) => (
             <NavLink key={to} to={to} style={({ isActive }) => ({
               display: 'flex', alignItems: 'center', gap: 10, padding: '10px 12px',
               borderRadius: 'var(--radius-md)', marginBottom: 2, fontSize: 14, fontWeight: 500,
@@ -79,7 +80,7 @@ export default function Layout() {
               background: isActive ? 'rgba(255,255,255,0.1)' : 'transparent', transition: 'all 0.15s',
               textDecoration: 'none',
             })}>
-              <span style={{ fontSize: 15 }}>{icon}</span>{label}
+              <Icon size={15} />{label}
             </NavLink>
           ))}
         </nav>
@@ -89,7 +90,7 @@ export default function Layout() {
           <div style={{ flex: 1, minWidth: 0 }}>
             <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--white)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{username}</div>
           </div>
-          <button onClick={handleLogout} title="Sign out" style={{ color: 'rgba(255,255,255,0.35)', fontSize: 16, padding: 4, background: 'none', border: 'none', cursor: 'pointer' }}>↩</button>
+          <button onClick={handleLogout} title="Sign out" style={{ color: 'rgba(255,255,255,0.35)', padding: 4, background: 'none', border: 'none', cursor: 'pointer', display: 'flex' }}><LogOut size={16} /></button>
         </div>
       </aside>
 

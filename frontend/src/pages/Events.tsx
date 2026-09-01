@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { useApi, useNotification } from '../hooks/useApi';
 import { useAuth } from '../context/AuthContext';
 import type { Game } from '../types';
+import { Clock, AlertTriangle, Calendar, ChevronRight } from 'lucide-react';
 
 function CreateEventModal({ onClose, onCreated }: { onClose: () => void; onCreated: () => void }) {
   const { apiFetch, username } = useAuth();
@@ -62,23 +63,16 @@ function formatTime(t: string | undefined): string {
 function EventCard({ event }: { event: Game }) {
   const status = event.status ?? event.Status ?? 'scheduled';
   const isCompleted = status === 'completed';
+  const statusColor = isCompleted ? 'var(--yellow-dark)' : 'var(--green)';
   return (
     <Link key={event.gid ?? event.GID} to={`/events/${event.gid ?? event.GID}`} style={{ textDecoration: 'none' }}>
-      <div
-        className="card fade-in"
-        style={{ padding: '18px 22px', cursor: 'pointer', transition: 'transform 0.12s, box-shadow 0.12s', display: 'flex', alignItems: 'center', gap: 16 }}
-        onMouseEnter={e => { (e.currentTarget as HTMLDivElement).style.transform = 'translateY(-2px)'; (e.currentTarget as HTMLDivElement).style.boxShadow = 'var(--shadow-md)'; }}
-        onMouseLeave={e => { (e.currentTarget as HTMLDivElement).style.transform = ''; (e.currentTarget as HTMLDivElement).style.boxShadow = ''; }}
-      >
-        <div style={{ width: 44, height: 44, borderRadius: 'var(--radius-md)', overflow: 'hidden', flexShrink: 0, background: isCompleted ? 'var(--gray-100)' : 'var(--green-light)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          {isCompleted ? <span style={{ fontSize: 20 }}>✅</span> : <img src="/pickleball.png" style={{ width: 32, height: 32, objectFit: 'contain' }} />}
-        </div>
+      <div className="row-item fade-in" style={{ borderLeftColor: statusColor, cursor: 'pointer' }}>
         <div style={{ flex: 1 }}>
-          <div style={{ fontFamily: 'Barlow Condensed, sans-serif', fontSize: 19, fontWeight: 700 }}>{event.location ?? event.Location ?? 'TBD'}</div>
-          <div style={{ fontSize: 13, color: 'var(--gray-500)', marginTop: 2 }}>🕐 {formatTime(event.gametime ?? event.GameTime)}</div>
+          <div style={{ fontFamily: 'var(--font-display)', fontWeight: 800, fontSize: 22, color: 'var(--charcoal)' }}>{event.location ?? event.Location ?? 'TBD'}</div>
+          <div style={{ fontSize: 13, color: 'var(--gray-500)', marginTop: 3, display: 'flex', alignItems: 'center', gap: 5 }}><Clock size={13} /> {formatTime(event.gametime ?? event.GameTime)}</div>
         </div>
-        <span className={`badge ${isCompleted ? 'badge-gray' : 'badge-green'}`}>{status}</span>
-        <span style={{ color: 'var(--gray-300)', fontSize: 18 }}>›</span>
+        <div className="row-status" style={{ color: statusColor }}>{status}</div>
+        <ChevronRight size={18} color="var(--gray-300)" />
       </div>
     </Link>
   );
@@ -106,15 +100,16 @@ export default function Events() {
       {loading && <div style={{ textAlign: 'center', padding: 60, color: 'var(--gray-500)' }}>Loading events...</div>}
 
       {error && (
-        <div style={{ background: 'var(--danger-light)', color: 'var(--danger)', padding: '14px 18px', borderRadius: 'var(--radius-md)', marginBottom: 16, fontSize: 14 }}>
-          ⚠️ Can't reach server — make sure your backend is running.
-          <br /><span style={{ fontSize: 12, opacity: 0.8 }}>{error}</span>
+        <div style={{ background: 'var(--danger-light)', color: 'var(--danger)', padding: '14px 18px', borderRadius: 'var(--radius-md)', marginBottom: 16, fontSize: 14, display: 'flex', gap: 8 }}>
+          <AlertTriangle size={17} style={{ flexShrink: 0, marginTop: 1 }} />
+          <span>Can't reach server — make sure your backend is running.
+          <br /><span style={{ fontSize: 12, opacity: 0.8 }}>{error}</span></span>
         </div>
       )}
 
       {!loading && !error && upcoming.length === 0 && completed.length === 0 && (
         <div className="empty-state">
-          <div className="empty-icon">📅</div>
+          <div className="empty-icon"><Calendar size={40} color="var(--gray-300)" /></div>
           <div className="empty-title">No events yet</div>
           <div style={{ marginBottom: 20 }}>Create the first pickleball event!</div>
           <button className="btn btn-primary" onClick={() => setShowCreate(true)}>Create Event</button>

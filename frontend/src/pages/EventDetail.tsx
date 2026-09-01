@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useNotification } from '../hooks/useApi';
 import type { Game, Player, ChatMessage } from '../types';
+import { Clock, CheckCircle2, Trophy, Shuffle, Trash2, ArrowLeft } from 'lucide-react';
 
 interface SubGame {
   sgid: number;
@@ -77,7 +78,7 @@ function NewGameModal({ players, onClose, onRecorded, apiFetch, eventId }: NewGa
             <div style={{ marginBottom: 16 }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
                 <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--gray-700)' }}>Assign players to teams</span>
-                <button type="button" className="btn btn-secondary btn-sm" onClick={handleRandomize}>🔀 Random</button>
+                <button type="button" className="btn btn-secondary btn-sm" onClick={handleRandomize}><Shuffle size={13} /> Random</button>
               </div>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 12 }}>
                 <div style={{ background: 'var(--green-light)', borderRadius: 'var(--radius-md)', padding: '10px 12px' }}>
@@ -273,14 +274,14 @@ export default function EventDetail() {
       {Notification}
 
       <button onClick={() => navigate('/events')} style={{ fontSize: 13, color: 'var(--gray-500)', marginBottom: 16, display: 'flex', alignItems: 'center', gap: 4, background: 'none', border: 'none', cursor: 'pointer' }}>
-        ← Back to Events
+        <ArrowLeft size={14} /> Back to Events
       </button>
 
       {/* Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 24 }}>
         <div>
           <div className="page-title">{location}</div>
-          <div style={{ fontSize: 14, color: 'var(--gray-500)', marginTop: 6 }}>🕐 {formatTime(gameTime)}</div>
+          <div style={{ fontSize: 14, color: 'var(--gray-500)', marginTop: 6, display: 'flex', alignItems: 'center', gap: 6 }}><Clock size={14} /> {formatTime(gameTime)}</div>
         </div>
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
           <span className={`badge ${isCompleted ? 'badge-gray' : 'badge-green'}`}>
@@ -291,8 +292,8 @@ export default function EventDetail() {
           {!isCompleted && isCreator && (
             <>
               <button className="btn btn-primary btn-sm" onClick={() => setShowNewGame(true)} disabled={players.length < 2}>+ Record Game</button>
-              <button className="btn btn-secondary btn-sm" onClick={handleFinish} disabled={subGames.length === 0 || players.length < 2}>✓ Finish Event</button>
-              <button className="btn btn-danger btn-sm" onClick={handleDelete}>🗑</button>
+              <button className="btn btn-secondary btn-sm" onClick={handleFinish} disabled={subGames.length === 0 || players.length < 2}><CheckCircle2 size={13} /> Finish Event</button>
+              <button className="btn btn-danger btn-sm" onClick={handleDelete}><Trash2 size={14} /></button>
             </>
           )}
         </div>
@@ -311,7 +312,11 @@ export default function EventDetail() {
           </div>
           <div className="stat-card">
             <div className="stat-label">Status</div>
-            <div className="stat-value" style={{ fontSize: 18, marginTop: 6 }}>{isCompleted ? '✅ Done' : '🟢 Live'}</div>
+            <div className="stat-value" style={{ fontSize: 18, marginTop: 6, display: 'flex', alignItems: 'center', gap: 7, fontFamily: 'var(--font-body)', fontWeight: 600 }}>
+              {isCompleted
+                ? <><CheckCircle2 size={16} color="var(--green)" /> Done</>
+                : <><span style={{ width: 8, height: 8, borderRadius: '50%', background: 'var(--yellow)', display: 'inline-block' }} /> Live</>}
+            </div>
           </div>
         </div>
       )}
@@ -334,7 +339,7 @@ export default function EventDetail() {
           {subGames.length > 0 && (
             <div className="card" style={{ padding: '20px 24px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-                <div style={{ fontFamily: 'Barlow Condensed, sans-serif', fontSize: 20, fontWeight: 700 }}>
+                <div style={{ fontFamily: 'var(--font-display)', fontWeight: 800, fontSize: 22 }}>
                   Games ({subGames.length})
                 </div>
                 {!isCompleted && isCreator && (
@@ -346,45 +351,25 @@ export default function EventDetail() {
                 {subGames.map((sg, idx) => {
                   const t1wins = sg.team1score > sg.team2score;
                   return (
-                    <div key={sg.sgid} style={{
-                      background: 'var(--gray-100)',
-                      borderRadius: 'var(--radius-md)',
-                      padding: '14px 16px',
-                    }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
-                        <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--gray-500)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                          Game {idx + 1}
-                        </span>
-                        <span style={{ fontSize: 11, color: 'var(--gray-500)' }}>· {formatShortTime(sg.createdat)}</span>
+                    <div key={sg.sgid} className="score-panel">
+                      <div className="score-panel-label">
+                        GAME {idx + 1} · {formatShortTime(sg.createdat)}
                       </div>
-                      <div style={{ display: 'grid', gridTemplateColumns: '1fr auto 1fr', gap: 12, alignItems: 'center' }}>
-                        <div style={{
-                          background: t1wins ? 'var(--green-light)' : 'var(--white)',
-                          border: `2px solid ${t1wins ? 'var(--green)' : 'var(--gray-300)'}`,
-                          borderRadius: 'var(--radius-md)', padding: '10px 12px',
-                        }}>
-                          <div style={{ fontSize: 11, fontWeight: 700, color: t1wins ? 'var(--green-dark)' : 'var(--gray-500)', marginBottom: 4 }}>
-                            TEAM A {t1wins ? '🏆' : ''}
-                          </div>
-                          <div style={{ fontSize: 13 }}>{sg.team1?.join(', ') || '—'}</div>
-                        </div>
-                        <div style={{ textAlign: 'center' }}>
-                          <div style={{ fontFamily: 'Barlow Condensed, sans-serif', fontSize: 28, fontWeight: 700, letterSpacing: 2 }}>
-                            <span style={{ color: t1wins ? 'var(--green-dark)' : 'var(--gray-700)' }}>{sg.team1score}</span>
-                            <span style={{ color: 'var(--gray-300)', margin: '0 4px' }}>—</span>
-                            <span style={{ color: !t1wins ? 'var(--green-dark)' : 'var(--gray-700)' }}>{sg.team2score}</span>
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr auto 1fr', gap: 10, alignItems: 'center' }}>
+                        <div>
+                          <div className="score-panel-name" style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                            {t1wins && <Trophy size={12} color="var(--yellow)" />} {sg.team1?.join(', ') || '—'}
                           </div>
                         </div>
-                        <div style={{
-                          background: !t1wins ? 'var(--green-light)' : 'var(--white)',
-                          border: `2px solid ${!t1wins ? 'var(--green)' : 'var(--gray-300)'}`,
-                          borderRadius: 'var(--radius-md)', padding: '10px 12px',
-                          textAlign: 'right',
-                        }}>
-                          <div style={{ fontSize: 11, fontWeight: 700, color: !t1wins ? 'var(--green-dark)' : 'var(--gray-500)', marginBottom: 4 }}>
-                            {!t1wins ? '🏆 ' : ''}TEAM B
+                        <div className="score-panel-value" style={{ fontSize: 44, display: 'flex', alignItems: 'center', gap: 8 }}>
+                          <span style={{ color: t1wins ? 'var(--yellow)' : 'var(--white)' }}>{sg.team1score}</span>
+                          <span style={{ fontSize: 24, color: 'rgba(255,255,255,0.3)' }}>&ndash;</span>
+                          <span style={{ color: !t1wins ? 'var(--yellow)' : 'var(--white)' }}>{sg.team2score}</span>
+                        </div>
+                        <div style={{ textAlign: 'right' }}>
+                          <div className="score-panel-name" style={{ display: 'flex', alignItems: 'center', gap: 4, justifyContent: 'flex-end' }}>
+                            {sg.team2?.join(', ') || '—'} {!t1wins && <Trophy size={12} color="var(--yellow)" />}
                           </div>
-                          <div style={{ fontSize: 13 }}>{sg.team2?.join(', ') || '—'}</div>
                         </div>
                       </div>
                     </div>
@@ -396,7 +381,7 @@ export default function EventDetail() {
 
           {/* Chat */}
           <div className="card" style={{ padding: '20px 24px' }}>
-            <div style={{ fontFamily: 'Barlow Condensed, sans-serif', fontSize: 18, fontWeight: 700, marginBottom: 14 }}>Event Chat</div>
+            <div style={{ fontFamily: 'var(--font-display)', fontWeight: 800, fontSize: 20, marginBottom: 14 }}>Event Chat</div>
             <div style={{ maxHeight: 200, overflowY: 'auto', marginBottom: 12, display: 'flex', flexDirection: 'column', gap: 8 }}>
               {chat.length === 0 && <div style={{ color: 'var(--gray-500)', fontSize: 13 }}>No messages yet</div>}
               {chat.map((msg, i) => {
@@ -422,8 +407,8 @@ export default function EventDetail() {
 
         {/* Players sidebar */}
         <div className="card" style={{ padding: '20px 22px' }}>
-          <div style={{ fontFamily: 'Barlow Condensed, sans-serif', fontSize: 18, fontWeight: 700, marginBottom: 14 }}>
-            Players <span style={{ color: 'var(--gray-500)', fontWeight: 400, fontSize: 14 }}>({players.length})</span>
+          <div style={{ fontFamily: 'var(--font-display)', fontWeight: 800, fontSize: 20, marginBottom: 14 }}>
+            Players <span style={{ fontFamily: 'var(--font-body)', color: 'var(--gray-500)', fontWeight: 400, fontSize: 14 }}>({players.length})</span>
           </div>
           {players.length === 0 && <div style={{ color: 'var(--gray-500)', fontSize: 13 }}>No players yet</div>}
 

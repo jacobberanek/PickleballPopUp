@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useApi } from '../hooks/useApi';
 import { useAuth } from '../context/AuthContext';
+import { ClipboardList, Trophy } from 'lucide-react';
 
 interface HistoryGame {
   sgid: number;
@@ -74,7 +75,7 @@ export default function GameHistory() {
 
       {!loading && filtered.length === 0 && (
         <div className="empty-state">
-          <div className="empty-icon">📋</div>
+          <div className="empty-icon"><ClipboardList size={40} color="var(--gray-300)" /></div>
           <div className="empty-title">No results recorded yet</div>
           <div>Complete an event with recorded games to see history here</div>
         </div>
@@ -85,38 +86,29 @@ export default function GameHistory() {
           const iPlayed = game.players?.filter(Boolean).includes(username ?? '');
           const iWon = game.winners?.includes(username ?? '');
           const t1wins = game.team1score > game.team2score;
+          const barColor = iPlayed ? (iWon ? 'var(--green)' : 'var(--danger)') : 'var(--gray-300)';
           return (
-            <div key={game.sgid} className="card fade-in" style={{ padding: '16px 20px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-                {iPlayed && (
-                  <div style={{
-                    width: 44, height: 44, borderRadius: 'var(--radius-md)', flexShrink: 0,
-                    background: iWon ? 'var(--green-light)' : 'var(--danger-light)',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    fontFamily: 'Barlow Condensed, sans-serif', fontWeight: 700, fontSize: 12,
-                    color: iWon ? 'var(--green-dark)' : 'var(--danger)',
-                  }}>
-                    {iWon ? 'WIN' : 'LOSS'}
+            <div key={game.sgid} className="row-item fade-in" style={{ borderLeftColor: barColor }}>
+              {iPlayed && (
+                <div className="row-status" style={{ color: barColor, minWidth: 36 }}>{iWon ? 'win' : 'loss'}</div>
+              )}
+              <div style={{ flex: 1 }}>
+                <div style={{ fontWeight: 600, fontSize: 15 }}>{game.location}</div>
+                <div style={{ fontSize: 12, color: 'var(--gray-500)', marginTop: 2 }}>
+                  {formatTime(game.time)} · {game.players?.filter(Boolean).join(', ')}
+                </div>
+              </div>
+              <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                <div style={{ fontFamily: 'var(--font-display)', fontWeight: 800, fontSize: 28 }}>
+                  <span style={{ color: t1wins ? 'var(--green-dark)' : 'var(--gray-700)' }}>{game.team1score}</span>
+                  <span style={{ color: 'var(--gray-300)', margin: '0 4px' }}>&ndash;</span>
+                  <span style={{ color: !t1wins ? 'var(--green-dark)' : 'var(--gray-700)' }}>{game.team2score}</span>
+                </div>
+                {game.winners?.length > 0 && (
+                  <div style={{ fontSize: 12, color: 'var(--green-dark)', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 4, justifyContent: 'flex-end' }}>
+                    <Trophy size={12} /> {game.winners.join(' & ')}
                   </div>
                 )}
-                <div style={{ flex: 1 }}>
-                  <div style={{ fontWeight: 600, fontSize: 15 }}>{game.location}</div>
-                  <div style={{ fontSize: 12, color: 'var(--gray-500)', marginTop: 2 }}>
-                    {formatTime(game.time)} · {game.players?.filter(Boolean).join(', ')}
-                  </div>
-                </div>
-                <div style={{ textAlign: 'right', flexShrink: 0 }}>
-                  <div style={{ fontFamily: 'Barlow Condensed, sans-serif', fontSize: 22, fontWeight: 700 }}>
-                    <span style={{ color: t1wins ? 'var(--green-dark)' : 'var(--gray-700)' }}>{game.team1score}</span>
-                    <span style={{ color: 'var(--gray-300)', margin: '0 4px' }}>—</span>
-                    <span style={{ color: !t1wins ? 'var(--green-dark)' : 'var(--gray-700)' }}>{game.team2score}</span>
-                  </div>
-                  {game.winners?.length > 0 && (
-                    <div style={{ fontSize: 12, color: 'var(--green-dark)', fontWeight: 600 }}>
-                      🏆 {game.winners.join(' & ')}
-                    </div>
-                  )}
-                </div>
               </div>
             </div>
           );
