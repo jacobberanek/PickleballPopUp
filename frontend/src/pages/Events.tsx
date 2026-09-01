@@ -60,19 +60,64 @@ function formatTime(t: string | undefined): string {
   } catch { return t; }
 }
 
-function EventCard({ event }: { event: Game }) {
+function formatFullTime(t: string | undefined): string {
+  if (!t) return '';
+  try {
+    return new Date(t).toLocaleString('en-US', { weekday: 'long', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
+  } catch { return t; }
+}
+
+function HeroEvent({ event }: { event: Game }) {
+  const gid = event.gid ?? event.GID;
+  return (
+    <Link to={`/events/${gid}`} style={{ textDecoration: 'none' }}>
+      <div className="fade-in" style={{
+        background: 'var(--charcoal)', borderRadius: 'var(--radius-lg)', padding: '26px 28px',
+        marginBottom: 24, display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+        gap: 16, cursor: 'pointer',
+      }}>
+        <div>
+          <div style={{ fontSize: 11, color: 'var(--yellow)', fontWeight: 700, letterSpacing: 0.6, marginBottom: 8, textTransform: 'uppercase' }}>Up next</div>
+          <div style={{ fontFamily: 'var(--font-display)', fontWeight: 800, fontSize: 36, color: 'var(--white)', lineHeight: 1 }}>
+            {event.location ?? event.Location ?? 'TBD'}
+          </div>
+          <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.6)', marginTop: 10, display: 'flex', alignItems: 'center', gap: 6 }}>
+            <Clock size={13} /> {formatFullTime(event.gametime ?? event.GameTime)}
+          </div>
+        </div>
+        <div style={{
+          background: 'var(--yellow)', color: 'var(--yellow-dark)', fontWeight: 700, fontSize: 13,
+          padding: '11px 22px', borderRadius: 'var(--radius-sm)', flexShrink: 0, display: 'flex', alignItems: 'center', gap: 6,
+        }}>
+          View event <ChevronRight size={15} />
+        </div>
+      </div>
+    </Link>
+  );
+}
+
+function EventTile({ event }: { event: Game }) {
   const status = event.status ?? event.Status ?? 'scheduled';
   const isCompleted = status === 'completed';
   const statusColor = isCompleted ? 'var(--yellow-dark)' : 'var(--green)';
   return (
-    <Link key={event.gid ?? event.GID} to={`/events/${event.gid ?? event.GID}`} style={{ textDecoration: 'none' }}>
-      <div className="row-item fade-in" style={{ borderLeftColor: statusColor, cursor: 'pointer' }}>
-        <div style={{ flex: 1 }}>
-          <div style={{ fontFamily: 'var(--font-display)', fontWeight: 800, fontSize: 22, color: 'var(--charcoal)' }}>{event.location ?? event.Location ?? 'TBD'}</div>
-          <div style={{ fontSize: 13, color: 'var(--gray-500)', marginTop: 3, display: 'flex', alignItems: 'center', gap: 5 }}><Clock size={13} /> {formatTime(event.gametime ?? event.GameTime)}</div>
+    <Link to={`/events/${event.gid ?? event.GID}`} style={{ textDecoration: 'none' }}>
+      <div
+        className="fade-in"
+        style={{
+          background: 'var(--white)', borderRadius: 'var(--radius-md)', padding: '14px 16px',
+          borderTop: `4px solid ${statusColor}`, cursor: 'pointer', transition: 'background 0.12s ease',
+        }}
+        onMouseEnter={e => { (e.currentTarget as HTMLDivElement).style.background = 'var(--gray-100)'; }}
+        onMouseLeave={e => { (e.currentTarget as HTMLDivElement).style.background = 'var(--white)'; }}
+      >
+        <div style={{ fontFamily: 'var(--font-display)', fontWeight: 800, fontSize: 18, color: 'var(--charcoal)' }}>
+          {event.location ?? event.Location ?? 'TBD'}
         </div>
-        <div className="row-status" style={{ color: statusColor }}>{status}</div>
-        <ChevronRight size={18} color="var(--gray-300)" />
+        <div style={{ fontSize: 12, color: 'var(--gray-500)', marginTop: 5, display: 'flex', alignItems: 'center', gap: 5 }}>
+          <Clock size={12} /> {formatTime(event.gametime ?? event.GameTime)}
+        </div>
+        <div className="row-status" style={{ color: statusColor, marginTop: 9 }}>{status}</div>
       </div>
     </Link>
   );
@@ -83,13 +128,21 @@ export default function Events() {
   const [showCreate, setShowCreate] = useState(false);
   const { show, Notification } = useNotification();
 
-  const upcoming = (events ?? []).filter(e => (e.status ?? e.Status) !== 'completed');
+  const allUpcoming = (events ?? []).filter(e => (e.status ?? e.Status) !== 'completed');
   const completed = (events ?? []).filter(e => (e.status ?? e.Status) === 'completed');
+
+  const sortedUpcoming = [...allUpcoming].sort((a, b) => {
+    const ta = new Date(a.gametime ?? a.GameTime ?? 0).getTime();
+    const tb = new Date(b.gametime ?? b.GameTime ?? 0).getTime();
+    return ta - tb;
+  });
+  const hero = sortedUpcoming[0];
+  const restUpcoming = sortedUpcoming.slice(1);
 
   return (
     <div>
       {Notification}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 28 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 24 }}>
         <div>
           <div className="page-title">Events</div>
           <div className="page-subtitle">Join a session or create your own</div>
@@ -107,7 +160,7 @@ export default function Events() {
         </div>
       )}
 
-      {!loading && !error && upcoming.length === 0 && completed.length === 0 && (
+      {!loading && !error && sortedUpcoming.length === 0 && completed.length === 0 && (
         <div className="empty-state">
           <div className="empty-icon"><Calendar size={40} color="var(--gray-300)" /></div>
           <div className="empty-title">No events yet</div>
@@ -116,26 +169,26 @@ export default function Events() {
         </div>
       )}
 
-      {/* Upcoming events */}
-      {upcoming.length > 0 && (
-        <div style={{ marginBottom: 32 }}>
-          <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--gray-500)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 12 }}>
-            Upcoming ({upcoming.length})
+      {hero && <HeroEvent event={hero} />}
+
+      {restUpcoming.length > 0 && (
+        <div style={{ marginBottom: 28 }}>
+          <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--gray-500)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 12 }}>
+            More upcoming ({restUpcoming.length})
           </div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-            {upcoming.map(event => <EventCard key={event.gid ?? event.GID} event={event} />)}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 12 }}>
+            {restUpcoming.map(event => <EventTile key={event.gid ?? event.GID} event={event} />)}
           </div>
         </div>
       )}
 
-      {/* Completed events */}
       {completed.length > 0 && (
         <div>
-          <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--gray-500)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 12 }}>
+          <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--gray-500)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 12 }}>
             Completed ({completed.length})
           </div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-            {completed.map(event => <EventCard key={event.gid ?? event.GID} event={event} />)}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 12 }}>
+            {completed.map(event => <EventTile key={event.gid ?? event.GID} event={event} />)}
           </div>
         </div>
       )}

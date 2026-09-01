@@ -3,8 +3,6 @@ import { useAuth } from '../context/AuthContext';
 import type { LeaderboardEntry } from '../types';
 import { Trophy, Download } from 'lucide-react';
 
-const MEDALS = ['🥇', '🥈', '🥉'];
-
 interface RichEntry extends LeaderboardEntry {
   losses: number;
   winPct: number;
@@ -12,6 +10,10 @@ interface RichEntry extends LeaderboardEntry {
   totalG: number;
   totalW: number;
 }
+
+const PODIUM_HEIGHT: Record<number, number> = { 1: 92, 2: 66, 3: 50 };
+const PODIUM_COLOR: Record<number, string> = { 1: 'var(--yellow)', 2: 'var(--gray-300)', 3: '#C98A5E' };
+const PODIUM_ORDER = [2, 1, 3];
 
 function exportCSV(players: RichEntry[]) {
   const header = 'Rank,Player,Wins,Losses,Games,Win%';
@@ -26,6 +28,25 @@ function exportCSV(players: RichEntry[]) {
   a.download = 'leaderboard.csv';
   a.click();
   URL.revokeObjectURL(url);
+}
+
+function PodiumSpot({ player, rank, isMe }: { player: RichEntry; rank: number; isMe: boolean }) {
+  return (
+    <div style={{ textAlign: 'center', width: 100 }}>
+      <div className="avatar" style={{
+        width: 42, height: 42, fontSize: 14, margin: '0 auto 8px',
+        boxShadow: isMe ? '0 0 0 2px var(--green)' : 'none',
+      }}>{player.displayName[0]?.toUpperCase()}</div>
+      <div style={{ fontSize: 12, fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{player.displayName}</div>
+      <div style={{ fontFamily: 'var(--font-display)', fontWeight: 800, fontSize: 15, color: 'var(--green-dark)', marginTop: 2, marginBottom: 6 }}>{player.winPct}%</div>
+      <div style={{
+        height: PODIUM_HEIGHT[rank], background: PODIUM_COLOR[rank], borderRadius: '6px 6px 0 0',
+        display: 'flex', alignItems: 'flex-start', justifyContent: 'center', paddingTop: 8,
+      }}>
+        <span style={{ fontFamily: 'var(--font-display)', fontWeight: 800, fontSize: 24, color: rank === 1 ? 'var(--yellow-dark)' : 'var(--white)' }}>{rank}</span>
+      </div>
+    </div>
+  );
 }
 
 export default function Leaderboard() {
@@ -47,6 +68,11 @@ export default function Leaderboard() {
 
   const me = players.find(p => p.displayName === username);
   const myRank = me ? players.indexOf(me) + 1 : null;
+
+  const hasPodium = players.length >= 3;
+  const podiumPlayers = hasPodium ? players.slice(0, 3) : [];
+  const restOfField = hasPodium ? players.slice(3) : players;
+  const restStartRank = hasPodium ? 4 : 1;
 
   return (
     <div className="fade-in">
@@ -89,7 +115,16 @@ export default function Leaderboard() {
         </div>
       )}
 
-      {players.length > 0 && (
+      {hasPodium && (
+        <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'center', gap: 10, marginBottom: 28 }}>
+          {PODIUM_ORDER.map(rank => {
+            const player = podiumPlayers[rank - 1];
+            return <PodiumSpot key={rank} player={player} rank={rank} isMe={player.displayName === username} />;
+          })}
+        </div>
+      )}
+
+      {restOfField.length > 0 && (
         <div className="card" style={{ overflow: 'hidden' }}>
           <div style={{ display: 'grid', gridTemplateColumns: '44px 1fr 56px 56px 56px 90px', gap: 8, padding: '10px 20px', background: 'var(--gray-100)', fontSize: 11, fontWeight: 700, color: 'var(--gray-500)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
             <div /><div>Player</div>
@@ -99,8 +134,8 @@ export default function Leaderboard() {
             <div>Win %</div>
           </div>
 
-          {players.map((p, idx) => {
-            const rank = idx + 1;
+          {restOfField.map((p, idx) => {
+            const rank = restStartRank + idx;
             const isMe = p.displayName === username;
             return (
               <div key={p.displayName} style={{
@@ -109,9 +144,7 @@ export default function Leaderboard() {
                 borderTop: idx > 0 ? '1px solid var(--line)' : 'none',
                 background: isMe ? 'var(--green-light)' : 'transparent',
               }}>
-                <div style={{ textAlign: 'center', fontSize: rank <= 3 ? 20 : 13, fontWeight: 700, color: 'var(--gray-500)' }}>
-                  {rank <= 3 ? MEDALS[rank - 1] : rank}
-                </div>
+                <div style={{ textAlign: 'center', fontSize: 13, fontWeight: 700, color: 'var(--gray-500)' }}>{rank}</div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                   <div className="avatar" style={{ width: 30, height: 30, fontSize: 11 }}>{p.displayName[0]?.toUpperCase()}</div>
                   <span style={{ fontSize: 14, fontWeight: 600 }}>

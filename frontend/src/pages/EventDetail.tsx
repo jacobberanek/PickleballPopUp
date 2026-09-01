@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useNotification } from '../hooks/useApi';
 import type { Game, Player, ChatMessage } from '../types';
-import { Clock, CheckCircle2, Trophy, Shuffle, Trash2, ArrowLeft } from 'lucide-react';
+import { Clock, CheckCircle2, Trophy, Shuffle, Trash2, ArrowLeft, MessageSquare, ChevronDown, ChevronUp } from 'lucide-react';
 
 interface SubGame {
   sgid: number;
@@ -199,6 +199,7 @@ export default function EventDetail() {
   const [loading, setLoading] = useState(true);
   const [showNewGame, setShowNewGame] = useState(false);
   const [chatMsg, setChatMsg] = useState('');
+  const [chatOpen, setChatOpen] = useState(false);
 
   const load = async () => {
     if (!id) return;
@@ -268,6 +269,7 @@ export default function EventDetail() {
   const isJoined = players.some(p => (p.username ?? p.Username) === username);
   const location = event.location ?? event.Location ?? '';
   const gameTime = event.gametime ?? event.GameTime ?? '';
+  const hostName = event.createdby ?? event.CreatedBy;
 
   return (
     <div className="fade-in">
@@ -278,7 +280,7 @@ export default function EventDetail() {
       </button>
 
       {/* Header */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 24 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 20 }}>
         <div>
           <div className="page-title">{location}</div>
           <div style={{ fontSize: 14, color: 'var(--gray-500)', marginTop: 6, display: 'flex', alignItems: 'center', gap: 6 }}><Clock size={14} /> {formatTime(gameTime)}</div>
@@ -297,6 +299,42 @@ export default function EventDetail() {
             </>
           )}
         </div>
+      </div>
+
+      {/* Roster strip */}
+      <div style={{ marginBottom: 20 }}>
+        {players.length === 0 ? (
+          <div style={{ fontSize: 13, color: 'var(--gray-500)' }}>No players yet</div>
+        ) : (
+          <div style={{ display: 'flex', gap: 14, overflowX: 'auto', paddingBottom: 4 }}>
+            {players.map((p, idx) => {
+              const name = p.username ?? p.Username ?? '';
+              const playerWins = subGames.filter(sg => sg.team1score > sg.team2score ? sg.team1.includes(name) : sg.team2.includes(name)).length;
+              const playerGames = subGames.filter(sg => sg.team1.includes(name) || sg.team2.includes(name)).length;
+              const isMe = name === username;
+              const isHost = name === hostName;
+              return (
+                <div key={idx} style={{ textAlign: 'center', flexShrink: 0, width: 68 }}>
+                  <div style={{
+                    width: 44, height: 44, borderRadius: '50%', margin: '0 auto', position: 'relative',
+                    background: 'var(--green-light)', color: 'var(--green-dark)',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: 14,
+                    boxShadow: isMe ? '0 0 0 2px var(--green)' : 'none',
+                  }}>
+                    {name[0]?.toUpperCase()}
+                    {isHost && <div style={{ position: 'absolute', top: -2, right: -2, width: 13, height: 13, borderRadius: '50%', background: 'var(--yellow)', border: '2px solid var(--gray-100)' }} />}
+                  </div>
+                  <div style={{ fontSize: 11, color: 'var(--charcoal)', marginTop: 5, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', fontWeight: 600 }}>{name}</div>
+                  {playerGames > 0 ? (
+                    <div style={{ fontSize: 10, color: 'var(--gray-500)' }}>{playerWins}W {playerGames - playerWins}L</div>
+                  ) : (
+                    <div style={{ fontSize: 10, color: 'var(--gray-300)' }}>&mdash;</div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        )}
       </div>
 
       {/* Stats bar */}
@@ -321,122 +359,98 @@ export default function EventDetail() {
         </div>
       )}
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 300px', gap: 20, alignItems: 'start' }}>
-        {/* Sub-games list */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
 
-          {/* Record game prompt */}
-          {!isCompleted && isCreator && players.length >= 2 && subGames.length === 0 && (
-            <div className="card" style={{ padding: '28px 24px', textAlign: 'center', borderStyle: 'dashed' }}>
-              <div style={{ fontSize: 32, marginBottom: 8 }}>🏓</div>
-              <div style={{ fontWeight: 600, marginBottom: 4 }}>Ready to play!</div>
-              <div style={{ fontSize: 13, color: 'var(--gray-500)', marginBottom: 16 }}>{players.length} players have joined. Record your first game.</div>
-              <button className="btn btn-primary" onClick={() => setShowNewGame(true)}>+ Record First Game</button>
-            </div>
-          )}
+        {/* Record game prompt */}
+        {!isCompleted && isCreator && players.length >= 2 && subGames.length === 0 && (
+          <div className="card" style={{ padding: '28px 24px', textAlign: 'center', borderStyle: 'dashed' }}>
+            <div style={{ fontSize: 32, marginBottom: 8 }}>🏓</div>
+            <div style={{ fontWeight: 600, marginBottom: 4 }}>Ready to play!</div>
+            <div style={{ fontSize: 13, color: 'var(--gray-500)', marginBottom: 16 }}>{players.length} players have joined. Record your first game.</div>
+            <button className="btn btn-primary" onClick={() => setShowNewGame(true)}>+ Record First Game</button>
+          </div>
+        )}
 
-          {/* Games */}
-          {subGames.length > 0 && (
-            <div className="card" style={{ padding: '20px 24px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-                <div style={{ fontFamily: 'var(--font-display)', fontWeight: 800, fontSize: 22 }}>
-                  Games ({subGames.length})
-                </div>
-                {!isCompleted && isCreator && (
-                  <button className="btn btn-primary btn-sm" onClick={() => setShowNewGame(true)}>+ New Game</button>
-                )}
+        {/* Games */}
+        {subGames.length > 0 && (
+          <div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+              <div style={{ fontFamily: 'var(--font-display)', fontWeight: 800, fontSize: 22 }}>
+                Games ({subGames.length})
               </div>
-
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                {subGames.map((sg, idx) => {
-                  const t1wins = sg.team1score > sg.team2score;
-                  return (
-                    <div key={sg.sgid} className="score-panel">
-                      <div className="score-panel-label">
-                        GAME {idx + 1} · {formatShortTime(sg.createdat)}
-                      </div>
-                      <div style={{ display: 'grid', gridTemplateColumns: '1fr auto 1fr', gap: 10, alignItems: 'center' }}>
-                        <div>
-                          <div className="score-panel-name" style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                            {t1wins && <Trophy size={12} color="var(--yellow)" />} {sg.team1?.join(', ') || '—'}
-                          </div>
-                        </div>
-                        <div className="score-panel-value" style={{ fontSize: 44, display: 'flex', alignItems: 'center', gap: 8 }}>
-                          <span style={{ color: t1wins ? 'var(--yellow)' : 'var(--white)' }}>{sg.team1score}</span>
-                          <span style={{ fontSize: 24, color: 'rgba(255,255,255,0.3)' }}>&ndash;</span>
-                          <span style={{ color: !t1wins ? 'var(--yellow)' : 'var(--white)' }}>{sg.team2score}</span>
-                        </div>
-                        <div style={{ textAlign: 'right' }}>
-                          <div className="score-panel-name" style={{ display: 'flex', alignItems: 'center', gap: 4, justifyContent: 'flex-end' }}>
-                            {sg.team2?.join(', ') || '—'} {!t1wins && <Trophy size={12} color="var(--yellow)" />}
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
+              {!isCompleted && isCreator && (
+                <button className="btn btn-primary btn-sm" onClick={() => setShowNewGame(true)}>+ New Game</button>
+              )}
             </div>
-          )}
 
-          {/* Chat */}
-          <div className="card" style={{ padding: '20px 24px' }}>
-            <div style={{ fontFamily: 'var(--font-display)', fontWeight: 800, fontSize: 20, marginBottom: 14 }}>Event Chat</div>
-            <div style={{ maxHeight: 200, overflowY: 'auto', marginBottom: 12, display: 'flex', flexDirection: 'column', gap: 8 }}>
-              {chat.length === 0 && <div style={{ color: 'var(--gray-500)', fontSize: 13 }}>No messages yet</div>}
-              {chat.map((msg, i) => {
-                const msgName = msg.username ?? msg.Username ?? '';
-                const isMe = msgName === username;
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+              {subGames.map((sg, idx) => {
+                const t1wins = sg.team1score > sg.team2score;
                 return (
-                  <div key={i} style={{ display: 'flex', gap: 8, alignItems: 'flex-start', flexDirection: isMe ? 'row-reverse' : 'row' }}>
-                    <div className="avatar" style={{ width: 26, height: 26, fontSize: 10, flexShrink: 0 }}>{msgName[0]?.toUpperCase()}</div>
-                    <div style={{ background: isMe ? 'var(--green-light)' : 'var(--gray-100)', borderRadius: 'var(--radius-md)', padding: '7px 11px', maxWidth: '70%' }}>
-                      {!isMe && <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--green-dark)', marginBottom: 2 }}>{msgName}</div>}
-                      <div style={{ fontSize: 13 }}>{msg.content ?? msg.Content}</div>
+                  <div key={sg.sgid} className="score-panel">
+                    <div className="score-panel-label">
+                      GAME {idx + 1} · {formatShortTime(sg.createdat)}
+                    </div>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr auto 1fr', gap: 10, alignItems: 'center' }}>
+                      <div>
+                        <div className="score-panel-name" style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                          {t1wins && <Trophy size={12} color="var(--yellow)" />} {sg.team1?.join(', ') || '—'}
+                        </div>
+                      </div>
+                      <div className="score-panel-value" style={{ fontSize: 44, display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <span style={{ color: t1wins ? 'var(--yellow)' : 'var(--white)' }}>{sg.team1score}</span>
+                        <span style={{ fontSize: 24, color: 'rgba(255,255,255,0.3)' }}>&ndash;</span>
+                        <span style={{ color: !t1wins ? 'var(--yellow)' : 'var(--white)' }}>{sg.team2score}</span>
+                      </div>
+                      <div style={{ textAlign: 'right' }}>
+                        <div className="score-panel-name" style={{ display: 'flex', alignItems: 'center', gap: 4, justifyContent: 'flex-end' }}>
+                          {sg.team2?.join(', ') || '—'} {!t1wins && <Trophy size={12} color="var(--yellow)" />}
+                        </div>
+                      </div>
                     </div>
                   </div>
                 );
               })}
             </div>
-            <form onSubmit={handleSendChat} style={{ display: 'flex', gap: 8 }}>
-              <input className="form-input" value={chatMsg} onChange={e => setChatMsg(e.target.value)} placeholder="Say something..." style={{ flex: 1 }} />
-              <button type="submit" className="btn btn-primary btn-sm">Send</button>
-            </form>
           </div>
-        </div>
+        )}
 
-        {/* Players sidebar */}
-        <div className="card" style={{ padding: '20px 22px' }}>
-          <div style={{ fontFamily: 'var(--font-display)', fontWeight: 800, fontSize: 20, marginBottom: 14 }}>
-            Players <span style={{ fontFamily: 'var(--font-body)', color: 'var(--gray-500)', fontWeight: 400, fontSize: 14 }}>({players.length})</span>
-          </div>
-          {players.length === 0 && <div style={{ color: 'var(--gray-500)', fontSize: 13 }}>No players yet</div>}
-
-          {/* Per-player stats within this event */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-            {players.map((p, idx) => {
-              const name = p.username ?? p.Username ?? '';
-              const playerWins = subGames.filter(sg => sg.team1score > sg.team2score ? sg.team1.includes(name) : sg.team2.includes(name)).length;
-              const playerGames = subGames.filter(sg => sg.team1.includes(name) || sg.team2.includes(name)).length;
-              return (
-                <div key={idx} style={{ padding: '10px 12px', background: 'var(--gray-100)', borderRadius: 'var(--radius-md)' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: playerGames > 0 ? 6 : 0 }}>
-                    <div className="avatar" style={{ width: 28, height: 28, fontSize: 11 }}>{name[0]?.toUpperCase()}</div>
-                    <span style={{ fontSize: 14, fontWeight: 600, flex: 1 }}>{name}</span>
-                    {name === username && <span className="badge badge-green" style={{ fontSize: 10 }}>You</span>}
-                    {name === (event.createdby ?? event.CreatedBy) && <span style={{ fontSize: 11, color: 'var(--gray-500)' }}>host</span>}
-                  </div>
-                  {playerGames > 0 && (
-                    <div style={{ display: 'flex', gap: 12, fontSize: 12, color: 'var(--gray-500)', paddingLeft: 36 }}>
-                      <span style={{ color: 'var(--green-dark)', fontWeight: 600 }}>{playerWins}W</span>
-                      <span>{playerGames - playerWins}L</span>
-                      <span>{playerGames} games</span>
+        {/* Chat (collapsible) */}
+        <div>
+          <button onClick={() => setChatOpen(!chatOpen)} style={{
+            width: '100%', background: 'var(--white)', border: '1.5px solid var(--line)', borderRadius: chatOpen ? '10px 10px 0 0' : 'var(--radius-lg)',
+            padding: '14px 18px', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+            cursor: 'pointer', fontSize: 14, fontWeight: 600, color: 'var(--charcoal)',
+          }}>
+            <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <MessageSquare size={16} /> Event chat {chat.length > 0 && <span style={{ color: 'var(--gray-500)', fontWeight: 400 }}>({chat.length})</span>}
+            </span>
+            {chatOpen ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+          </button>
+          {chatOpen && (
+            <div style={{ background: 'var(--white)', border: '1.5px solid var(--line)', borderTop: 'none', borderRadius: '0 0 10px 10px', padding: '16px 18px' }}>
+              <div style={{ maxHeight: 200, overflowY: 'auto', marginBottom: 12, display: 'flex', flexDirection: 'column', gap: 8 }}>
+                {chat.length === 0 && <div style={{ color: 'var(--gray-500)', fontSize: 13 }}>No messages yet</div>}
+                {chat.map((msg, i) => {
+                  const msgName = msg.username ?? msg.Username ?? '';
+                  const isMe = msgName === username;
+                  return (
+                    <div key={i} style={{ display: 'flex', gap: 8, alignItems: 'flex-start', flexDirection: isMe ? 'row-reverse' : 'row' }}>
+                      <div className="avatar" style={{ width: 26, height: 26, fontSize: 10, flexShrink: 0 }}>{msgName[0]?.toUpperCase()}</div>
+                      <div style={{ background: isMe ? 'var(--green-light)' : 'var(--gray-100)', borderRadius: 'var(--radius-md)', padding: '7px 11px', maxWidth: '70%' }}>
+                        {!isMe && <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--green-dark)', marginBottom: 2 }}>{msgName}</div>}
+                        <div style={{ fontSize: 13 }}>{msg.content ?? msg.Content}</div>
+                      </div>
                     </div>
-                  )}
-                </div>
-              );
-            })}
-          </div>
+                  );
+                })}
+              </div>
+              <form onSubmit={handleSendChat} style={{ display: 'flex', gap: 8 }}>
+                <input className="form-input" value={chatMsg} onChange={e => setChatMsg(e.target.value)} placeholder="Say something..." style={{ flex: 1 }} />
+                <button type="submit" className="btn btn-primary btn-sm">Send</button>
+              </form>
+            </div>
+          )}
         </div>
       </div>
 

@@ -113,6 +113,35 @@ input, select, textarea { font-family: inherit; }
   transform: skewX(-12deg) rotate(0deg);
 }
 
+.login-submit-btn {
+  width: 100%; position: relative; overflow: hidden; display: block;
+  background: var(--green); color: var(--white); border: none;
+  padding: 15px 0; font-weight: 700; font-size: 15px; cursor: pointer;
+  font-family: var(--font-body); transition: color 0.25s ease;
+  clip-path: polygon(0 0, 100% 0, 96% 100%, 0% 100%);
+}
+.login-submit-btn::before {
+  content: ''; position: absolute; inset: 0; background: var(--yellow);
+  transform: scaleX(0); transform-origin: left; transition: transform 0.28s ease; z-index: 0;
+}
+.login-submit-btn:hover::before { transform: scaleX(1); }
+.login-submit-btn:hover { color: var(--yellow-dark); }
+.login-submit-btn span { position: relative; z-index: 1; }
+.login-submit-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+.login-submit-btn:disabled:hover::before { transform: scaleX(0); }
+.login-submit-btn:disabled:hover { color: var(--white); }
+
+.login-split { display: flex; min-height: 100vh; }
+.login-art-panel { flex: 1.1; background: var(--green); display: none; flex-direction: column; align-items: center; justify-content: center; padding: 40px; }
+.login-form-panel { flex: 1; background: var(--gray-100); display: flex; align-items: center; justify-content: center; padding: 24px; min-height: 100vh; }
+.login-form-card { width: 100%; max-width: 380px; }
+.login-mobile-brand { display: block; text-align: center; margin-bottom: 28px; }
+
+@media (min-width: 768px) {
+  .login-art-panel { display: flex; }
+  .login-mobile-brand { display: none; }
+}
+
 @media (max-width: 768px) {
   .desktop-sidebar { display: none !important; }
   .mobile-bar { display: flex !important; }
