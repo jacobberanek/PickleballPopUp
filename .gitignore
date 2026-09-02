@@ -21,6 +21,7 @@ npm-debug.log
 # Environment files
 # ======================
 .env
+.env.local
 
 # ======================
 # Build folders (React / Vite)
