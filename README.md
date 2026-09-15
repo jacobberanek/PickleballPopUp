@@ -5,10 +5,10 @@
 ---
 
 ## Members
-- Cindy Jiang  
-- Reid Roberts  
-- Reed Parish  
-- Nathan Currier  
+- Jacob Beranek
+- William Youngblood
+- Mith Patel 
+- Rudra Patel
 
 ---
 
