@@ -31,7 +31,10 @@ async function initDb() {
 }
 
 const PORT = process.env.PORT || 3001;
-app.listen(PORT, async () => {
-  console.log(`Server on ${PORT}`);
+
+async function start() {
   await initDb();
-});
+  app.listen(PORT, () => console.log(`Server on ${PORT}`));
+}
+
+start();
