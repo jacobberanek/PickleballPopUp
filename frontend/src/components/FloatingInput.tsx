@@ -8,7 +8,7 @@ interface FloatingInputProps extends Omit<InputHTMLAttributes<HTMLInputElement>,
 
 export default function FloatingInput({ label, value, onChange, type = 'text', style, ...rest }: FloatingInputProps) {
   const [focused, setFocused] = useState(false);
-  const floated = focused || value.length > 0 || type === 'date';
+  const floated = focused || value.length > 0 || type === 'date' || type === 'time';
 
   return (
     <div style={{ position: 'relative', marginBottom: 30 }}>
