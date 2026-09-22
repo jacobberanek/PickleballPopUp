@@ -13,9 +13,11 @@ CREATE TABLE IF NOT EXISTS Games (
     GID SERIAL PRIMARY KEY,
     GameTime TIMESTAMP NOT NULL,
     Location VARCHAR(255),
-    Status VARCHAR(20) DEFAULT 'scheduled' CHECK (Status IN ('scheduled', 'completed')),
+    Status VARCHAR(20) DEFAULT 'scheduled' CHECK (Status IN ('scheduled', 'in_progress', 'completed')),
     Type TEXT,
-    CreatedBy TEXT
+    CreatedBy TEXT,
+    StartedAt TIMESTAMP,
+    EndedAt TIMESTAMP
 );
 
 CREATE TABLE IF NOT EXISTS GamePlayers (
@@ -32,7 +34,10 @@ CREATE TABLE IF NOT EXISTS SubGames (
     GID INTEGER NOT NULL REFERENCES Games(GID) ON DELETE CASCADE,
     Team1Score INTEGER,
     Team2Score INTEGER,
-    CreatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    CreatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    StartedAt TIMESTAMP,
+    EndedAt TIMESTAMP,
+    Status VARCHAR(20) DEFAULT 'not_started' CHECK (Status IN ('not_started', 'in_progress', 'completed'))
 );
 
 CREATE TABLE IF NOT EXISTS SubGamePlayers (

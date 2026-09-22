@@ -285,6 +285,91 @@ router.post("/:id/finish", async (req, res) => {
   }
 });
 
+/* START SESSION */
+router.post("/:id/start", async (req, res) => {
+  try {
+    await db.query(
+      "UPDATE Games SET Status = 'in_progress', StartedAt = NOW() WHERE GID = $1",
+      [req.params.id]
+    );
+    res.json({ success: true });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+/* START SUB-GAME (teams only, no score yet) */
+router.post("/:id/startgame", async (req, res) => {
+  try {
+    const { team1, team2 } = req.body;
+    const gameId = req.params.id;
+
+    if (!team1 || !team2) return res.status(400).json({ error: "Missing teams" });
+
+    const { rows: sgRows } = await db.query(
+      "INSERT INTO SubGames (GID, Status, StartedAt) VALUES ($1, 'in_progress', NOW()) RETURNING SGID",
+      [gameId]
+    );
+    const sgid = sgRows[0].sgid;
+
+    for (const name of team1) {
+      const { rows } = await db.query("SELECT * FROM Users WHERE Username = $1", [name.toLowerCase()]);
+      if (rows.length > 0) {
+        await db.query("INSERT INTO SubGamePlayers (SGID, UID, Team) VALUES ($1, $2, 1)", [sgid, rows[0].uid]);
+      }
+    }
+    for (const name of team2) {
+      const { rows } = await db.query("SELECT * FROM Users WHERE Username = $1", [name.toLowerCase()]);
+      if (rows.length > 0) {
+        await db.query("INSERT INTO SubGamePlayers (SGID, UID, Team) VALUES ($1, $2, 2)", [sgid, rows[0].uid]);
+      }
+    }
+
+    res.json({ success: true, sgid });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+/* END SUB-GAME (enter score, mark winners) */
+router.post("/subgame/:sgid/end", async (req, res) => {
+  try {
+    const { team1score, team2score } = req.body;
+    const sgid = req.params.sgid;
+
+    if (team1score === undefined || team2score === undefined) {
+      return res.status(400).json({ error: "Missing score" });
+    }
+
+    const team1wins = parseInt(team1score) > parseInt(team2score);
+
+    await db.query(
+      "UPDATE SubGames SET Team1Score = $1, Team2Score = $2, Status = 'completed', EndedAt = NOW() WHERE SGID = $3",
+      [team1score, team2score, sgid]
+    );
+    await db.query("UPDATE SubGamePlayers SET IsWinner = $1 WHERE SGID = $2 AND Team = 1", [team1wins, sgid]);
+    await db.query("UPDATE SubGamePlayers SET IsWinner = $1 WHERE SGID = $2 AND Team = 2", [!team1wins, sgid]);
+
+    res.json({ success: true });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+/* END SESSION */
+router.post("/:id/end", async (req, res) => {
+  try {
+    await db.query(
+      "UPDATE Games SET Status = 'completed', EndedAt = NOW() WHERE GID = $1",
+      [req.params.id]
+    );
+    res.json({ success: true });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+
 /* GET CHAT */
 router.get("/:id/chat", async (req, res) => {
   try {
