@@ -318,7 +318,7 @@ export default function EventDetail() {
                       <span style={{ color: 'var(--gray-500)' }}>–</span>
                       <span style={{ color: 'var(--yellow-dark)' }}>{formatShortTime(sg.endedat)}</span>
                       <span style={{ color: 'var(--gray-500)' }}>·</span>
-                      <span style={{ color: 'var(--charcoal)', fontWeight: 700 }}>{formatDuration(sg.startedat, sg.endedat)}</span>
+                      <span style={{ color: 'var(--white)', fontWeight: 700 }}>{formatDuration(sg.startedat, sg.endedat)}</span>
                     </div>
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr auto 1fr', gap: 10, alignItems: 'center' }}>
                       <div>
