@@ -10,6 +10,7 @@ function CreateEventModal({ onClose, onCreated }: { onClose: () => void; onCreat
   const { apiFetch, username } = useAuth();
   const [location, setLocation] = useState('');
   const [date, setDate] = useState('');
+  const [time, setTime] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -19,7 +20,7 @@ function CreateEventModal({ onClose, onCreated }: { onClose: () => void; onCreat
     try {
       await apiFetch('/api/games', {
         method: 'POST',
-        body: JSON.stringify({ location, time: date, username }),
+        body: JSON.stringify({ location, time: `${date}T${time}`, username }),
       });
       onCreated();
       onClose();
@@ -37,6 +38,7 @@ function CreateEventModal({ onClose, onCreated }: { onClose: () => void; onCreat
         <form onSubmit={handleSubmit}>
           <FloatingInput label="Location & Time" value={location} onChange={setLocation} required />
           <FloatingInput label="Date" type="date" value={date} onChange={setDate} required />
+          <FloatingInput label="Time" type="time" value={time} onChange={setTime} required />
           {error && <div style={{ color: 'var(--danger)', fontSize: 13, marginBottom: 10 }}>{error}</div>}
           <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
             <button type="button" className="btn btn-secondary" onClick={onClose}>Cancel</button>

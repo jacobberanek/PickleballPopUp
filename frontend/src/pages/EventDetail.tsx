@@ -2,176 +2,12 @@ import { useState, useEffect, FormEvent } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useNotification } from '../hooks/useApi';
-import type { Game, Player, ChatMessage } from '../types';
-import { Clock, CheckCircle2, Trophy, Shuffle, Trash2, ArrowLeft, MessageSquare, ChevronDown, ChevronUp } from 'lucide-react';
-import FloatingInput from '../components/FloatingInput';
-
-interface SubGame {
-  sgid: number;
-  team1: string[];
-  team2: string[];
-  team1score: number;
-  team2score: number;
-  createdat: string;
-}
-
-interface NewGameModalProps {
-  players: Player[];
-  onClose: () => void;
-  onRecorded: () => void;
-  apiFetch: <T = unknown>(path: string, options?: RequestInit) => Promise<T>;
-  eventId: string;
-}
-
-function NewGameModal({ players, onClose, onRecorded, apiFetch, eventId }: NewGameModalProps) {
-  const names = players.map(p => p.username ?? p.Username ?? '').filter(Boolean);
-  const [team1, setTeam1] = useState<string[]>([]);
-  const [team2, setTeam2] = useState<string[]>([]);
-  const [team1score, setTeam1score] = useState('');
-  const [team2score, setTeam2score] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-  const [step, setStep] = useState<'teams' | 'scores'>('teams');
-
-  const togglePlayer = (name: string, team: 1 | 2) => {
-    if (team === 1) {
-      if (team1.includes(name)) setTeam1(team1.filter(p => p !== name));
-      else if (!team2.includes(name)) setTeam1([...team1, name]);
-    } else {
-      if (team2.includes(name)) setTeam2(team2.filter(p => p !== name));
-      else if (!team1.includes(name)) setTeam2([...team2, name]);
-    }
-  };
-
-  const handleRandomize = () => {
-    const shuffled = [...names].sort(() => Math.random() - 0.5);
-    const mid = Math.ceil(shuffled.length / 2);
-    setTeam1(shuffled.slice(0, mid));
-    setTeam2(shuffled.slice(mid));
-  };
-
-  const handleSubmit = async (e: FormEvent) => {
-    e.preventDefault();
-    if (team1.length === 0 || team2.length === 0) { setError('Both teams need players'); return; }
-    if (!team1score || !team2score) { setError('Enter scores for both teams'); return; }
-    setLoading(true);
-    try {
-      await apiFetch(`/api/games/${eventId}/subgame`, {
-        method: 'POST',
-        body: JSON.stringify({ team1, team2, team1score: parseInt(team1score), team2score: parseInt(team2score) }),
-      });
-      onRecorded();
-      onClose();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to record game');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  return (
-    <div className="modal-backdrop" onClick={onClose}>
-      <div className="modal" style={{ maxWidth: 520 }} onClick={e => e.stopPropagation()}>
-        <div className="modal-title">Record New Game</div>
-
-        {step === 'teams' ? (
-          <>
-            <div style={{ marginBottom: 16 }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
-                <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--gray-700)' }}>Assign players to teams</span>
-                <button type="button" className="btn btn-secondary btn-sm" onClick={handleRandomize}><Shuffle size={13} /> Random</button>
-              </div>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 12 }}>
-                <div style={{ background: 'var(--green-light)', borderRadius: 'var(--radius-md)', padding: '10px 12px' }}>
-                  <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--green-dark)', marginBottom: 8 }}>TEAM A</div>
-                  {team1.map(p => (
-                    <div key={p} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
-                      <span style={{ fontSize: 13 }}>{p}</span>
-                      <button onClick={() => togglePlayer(p, 1)} style={{ fontSize: 14, color: 'var(--danger)', background: 'none', border: 'none', cursor: 'pointer' }}>×</button>
-                    </div>
-                  ))}
-                  {team1.length === 0 && <div style={{ fontSize: 12, color: 'var(--gray-500)' }}>No players yet</div>}
-                </div>
-                <div style={{ background: 'var(--yellow-light)', borderRadius: 'var(--radius-md)', padding: '10px 12px' }}>
-                  <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--yellow-dark)', marginBottom: 8 }}>TEAM B</div>
-                  {team2.map(p => (
-                    <div key={p} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
-                      <span style={{ fontSize: 13 }}>{p}</span>
-                      <button onClick={() => togglePlayer(p, 2)} style={{ fontSize: 14, color: 'var(--danger)', background: 'none', border: 'none', cursor: 'pointer' }}>×</button>
-                    </div>
-                  ))}
-                  {team2.length === 0 && <div style={{ fontSize: 12, color: 'var(--gray-500)' }}>No players yet</div>}
-                </div>
-              </div>
-              <div style={{ fontSize: 12, color: 'var(--gray-500)', marginBottom: 8 }}>Click a player to add to a team:</div>
-              <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-                {names.map(name => {
-                  const inT1 = team1.includes(name);
-                  const inT2 = team2.includes(name);
-                  return (
-                    <div key={name} style={{ display: 'flex', gap: 4 }}>
-                      <button
-                        onClick={() => togglePlayer(name, 1)}
-                        style={{
-                          padding: '4px 10px', borderRadius: 'var(--radius-sm)', fontSize: 12, cursor: 'pointer',
-                          background: inT1 ? 'var(--green)' : 'var(--gray-100)',
-                          color: inT1 ? 'white' : 'var(--gray-700)',
-                          border: '1px solid', borderColor: inT1 ? 'var(--green)' : 'var(--gray-300)',
-                        }}
-                      >A: {name}</button>
-                      <button
-                        onClick={() => togglePlayer(name, 2)}
-                        style={{
-                          padding: '4px 10px', borderRadius: 'var(--radius-sm)', fontSize: 12, cursor: 'pointer',
-                          background: inT2 ? 'var(--yellow-dark)' : 'var(--gray-100)',
-                          color: inT2 ? 'white' : 'var(--gray-700)',
-                          border: '1px solid', borderColor: inT2 ? 'var(--yellow-dark)' : 'var(--gray-300)',
-                        }}
-                      >B: {name}</button>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-            <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
-              <button type="button" className="btn btn-secondary" onClick={onClose}>Cancel</button>
-              <button
-                type="button"
-                className="btn btn-primary"
-                disabled={team1.length === 0 || team2.length === 0}
-                onClick={() => setStep('scores')}
-              >Next: Enter Scores →</button>
-            </div>
-          </>
-        ) : (
-          <form onSubmit={handleSubmit}>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 16 }}>
-              <div>
-                <div style={{ background: 'var(--green-light)', borderRadius: 'var(--radius-md)', padding: '10px 12px', marginBottom: 8 }}>
-                  <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--green-dark)', marginBottom: 4 }}>TEAM A</div>
-                  <div style={{ fontSize: 13 }}>{team1.join(', ')}</div>
-                </div>
-                <FloatingInput label="Team A score" type="number" min={0} max={99} value={team1score} onChange={setTeam1score} required />
-              </div>
-              <div>
-                <div style={{ background: 'var(--yellow-light)', borderRadius: 'var(--radius-md)', padding: '10px 12px', marginBottom: 8 }}>
-                  <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--yellow-dark)', marginBottom: 4 }}>TEAM B</div>
-                  <div style={{ fontSize: 13 }}>{team2.join(', ')}</div>
-                </div>
-                <FloatingInput label="Team B score" type="number" min={0} max={99} value={team2score} onChange={setTeam2score} required />
-              </div>
-            </div>
-            {error && <div style={{ color: 'var(--danger)', fontSize: 13, marginBottom: 10 }}>{error}</div>}
-            <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
-              <button type="button" className="btn btn-secondary" onClick={() => setStep('teams')}>← Back</button>
-              <button type="submit" className="btn btn-primary" disabled={loading}>{loading ? 'Saving...' : 'Record Game'}</button>
-            </div>
-          </form>
-        )}
-      </div>
-    </div>
-  );
-}
+import type { Game, Player, ChatMessage, SubGame } from '../types';
+import { Clock, CheckCircle2, Trophy, Trash2, ArrowLeft, MessageSquare, ChevronDown, ChevronUp, Play, Square } from 'lucide-react';
+import TeamPickerModal from '../components/TeamPickerModal';
+import ScoreEntryModal from '../components/ScoreEntryModal';
+import LiveGameTimer from '../components/LiveGameTimer';
+import SessionTimer from '../components/SessionTimer';
 
 function formatTime(t: string | undefined): string {
   if (!t) return '';
@@ -187,6 +23,18 @@ function formatShortTime(t: string | undefined): string {
   } catch { return t; }
 }
 
+function formatMs(ms: number): string {
+  const totalSeconds = Math.floor(ms / 1000);
+  const m = Math.floor(totalSeconds / 60);
+  const s = totalSeconds % 60;
+  return m > 0 ? `${m}m ${s}s` : `${s}s`;
+}
+
+function formatDuration(start?: string, end?: string): string {
+  if (!start || !end) return '';
+  return formatMs(new Date(end).getTime() - new Date(start).getTime());
+}
+
 export default function EventDetail() {
   const { id } = useParams<{ id: string }>();
   const { username, apiFetch } = useAuth();
@@ -198,7 +46,8 @@ export default function EventDetail() {
   const [subGames, setSubGames] = useState<SubGame[]>([]);
   const [chat, setChat] = useState<ChatMessage[]>([]);
   const [loading, setLoading] = useState(true);
-  const [showNewGame, setShowNewGame] = useState(false);
+  const [showTeamPicker, setShowTeamPicker] = useState(false);
+  const [scoringSubGame, setScoringSubGame] = useState<SubGame | null>(null);
   const [chatMsg, setChatMsg] = useState('');
   const [chatOpen, setChatOpen] = useState(false);
 
@@ -235,9 +84,14 @@ export default function EventDetail() {
     catch (err) { show(err instanceof Error ? err.message : 'Error', 'error'); }
   };
 
-  const handleFinish = async () => {
-    if (!window.confirm(`Finish this event? ${subGames.length} games will be recorded.`)) return;
-    try { await apiFetch(`/api/games/${id}/finish`, { method: 'POST' }); show('Event completed!', 'success'); load(); }
+  const handleStartSession = async () => {
+    try { await apiFetch(`/api/games/${id}/start`, { method: 'POST' }); show('Session started!', 'success'); load(); }
+    catch (err) { show(err instanceof Error ? err.message : 'Error', 'error'); }
+  };
+
+  const handleEndSession = async () => {
+    if (!window.confirm(`End this session? ${subGames.filter(sg => sg.status === 'completed').length} games will be finalized.`)) return;
+    try { await apiFetch(`/api/games/${id}/end`, { method: 'POST' }); show('Session ended!', 'success'); load(); }
     catch (err) { show(err instanceof Error ? err.message : 'Error', 'error'); }
   };
 
@@ -265,12 +119,43 @@ export default function EventDetail() {
     </div>
   );
 
-  const isCompleted = (event.status ?? event.Status) === 'completed';
+  const status = event.status ?? event.Status ?? 'scheduled';
+  const isScheduled = status === 'scheduled';
+  const isInProgress = status === 'in_progress';
+  const isCompleted = status === 'completed';
   const isCreator = (event.createdby ?? event.CreatedBy) === username;
   const isJoined = players.some(p => (p.username ?? p.Username) === username);
   const location = event.location ?? event.Location ?? '';
   const gameTime = event.gametime ?? event.GameTime ?? '';
+  const sessionStartedAt = event.startedat ?? event.StartedAt;
   const hostName = event.createdby ?? event.CreatedBy;
+
+  const activeSubGame = subGames.find(sg => sg.status === 'in_progress');
+  const completedSubGames = subGames.filter(sg => sg.status === 'completed');
+  const avgGameMs = completedSubGames.length > 0
+    ? completedSubGames.reduce((sum, sg) => {
+        if (!sg.startedat || !sg.endedat) return sum;
+        return sum + (new Date(sg.endedat).getTime() - new Date(sg.startedat).getTime());
+      }, 0) / completedSubGames.length
+    : null;
+
+  // Fullscreen live-game view takes over completely while a game is running —
+  // no roster, no chat, no stats, per the sponsor's "only display the timer" spec.
+  if (activeSubGame) {
+    return (
+      <>
+        <LiveGameTimer subGame={activeSubGame} onEndGame={() => setScoringSubGame(activeSubGame)} />
+        {scoringSubGame && (
+          <ScoreEntryModal
+            subGame={scoringSubGame}
+            onClose={() => setScoringSubGame(null)}
+            onEnded={() => { show('Game recorded!', 'success'); load(); }}
+            apiFetch={apiFetch}
+          />
+        )}
+      </>
+    );
+  }
 
   return (
     <div className="fade-in">
@@ -286,17 +171,30 @@ export default function EventDetail() {
           <div className="page-title">{location}</div>
           <div style={{ fontSize: 14, color: 'var(--gray-500)', marginTop: 6, display: 'flex', alignItems: 'center', gap: 6 }}><Clock size={14} /> {formatTime(gameTime)}</div>
         </div>
-        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
-          <span className={`badge ${isCompleted ? 'badge-gray' : 'badge-green'}`}>
-            {event.status ?? event.Status ?? 'scheduled'}
-          </span>
-          {!isCompleted && !isJoined && <button className="btn btn-primary btn-sm" onClick={handleJoin}>Join</button>}
-          {!isCompleted && isJoined && !isCreator && <button className="btn btn-danger btn-sm" onClick={handleLeave}>Leave</button>}
-          {!isCompleted && isCreator && (
+        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', justifyContent: 'flex-end', alignItems: 'center' }}>
+          {isInProgress && <SessionTimer startedAt={sessionStartedAt} />}
+          <span className={`badge ${isCompleted ? 'badge-gray' : 'badge-green'}`}>{status}</span>
+
+          {isScheduled && !isJoined && <button className="btn btn-primary btn-sm" onClick={handleJoin}>Join</button>}
+          {isScheduled && isJoined && !isCreator && <button className="btn btn-danger btn-sm" onClick={handleLeave}>Leave</button>}
+
+          {isScheduled && isCreator && (
             <>
-              <button className="btn btn-primary btn-sm" onClick={() => setShowNewGame(true)} disabled={players.length < 2}>+ Record Game</button>
-              <button className="btn btn-secondary btn-sm" onClick={handleFinish} disabled={subGames.length === 0 || players.length < 2}><CheckCircle2 size={13} /> Finish Event</button>
+              <button className="btn btn-primary btn-sm" onClick={handleStartSession} disabled={players.length < 2}>
+                <Play size={13} /> Start Session
+              </button>
               <button className="btn btn-danger btn-sm" onClick={handleDelete}><Trash2 size={14} /></button>
+            </>
+          )}
+
+          {isInProgress && isCreator && (
+            <>
+              <button className="btn btn-primary btn-sm" onClick={() => setShowTeamPicker(true)} disabled={players.length < 2}>
+                + Start Game
+              </button>
+              <button className="btn btn-secondary btn-sm" onClick={handleEndSession}>
+                <Square size={13} /> End Session
+              </button>
             </>
           )}
         </div>
@@ -310,8 +208,8 @@ export default function EventDetail() {
           <div style={{ display: 'flex', gap: 14, overflowX: 'auto', paddingBottom: 4 }}>
             {players.map((p, idx) => {
               const name = p.username ?? p.Username ?? '';
-              const playerWins = subGames.filter(sg => sg.team1score > sg.team2score ? sg.team1.includes(name) : sg.team2.includes(name)).length;
-              const playerGames = subGames.filter(sg => sg.team1.includes(name) || sg.team2.includes(name)).length;
+              const playerWins = completedSubGames.filter(sg => sg.team1score > sg.team2score ? sg.team1.includes(name) : sg.team2.includes(name)).length;
+              const playerGames = completedSubGames.filter(sg => sg.team1.includes(name) || sg.team2.includes(name)).length;
               const isMe = name === username;
               const isHost = name === hostName;
               return (
@@ -339,15 +237,29 @@ export default function EventDetail() {
       </div>
 
       {/* Stats bar */}
-      {subGames.length > 0 && (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12, marginBottom: 20 }}>
+      {(isInProgress || isCompleted) && (
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: 12, marginBottom: 20 }}>
           <div className="stat-card">
             <div className="stat-label">Games Played</div>
-            <div className="stat-value">{subGames.length}</div>
+            <div className="stat-value">{completedSubGames.length}</div>
           </div>
           <div className="stat-card">
             <div className="stat-label">Players</div>
             <div className="stat-value">{players.length}</div>
+          </div>
+          <div className="stat-card">
+            <div className="stat-label">Session Length</div>
+            {isInProgress ? (
+              <SessionTimer startedAt={sessionStartedAt} style={{ fontSize: 24, fontWeight: 800 }} />
+            ) : (
+              <div className="stat-value">
+                {formatMs(new Date(event.endedat ?? event.EndedAt ?? '').getTime() - new Date(sessionStartedAt ?? '').getTime())}
+              </div>
+            )}
+          </div>
+          <div className="stat-card">
+            <div className="stat-label">Avg Game Time</div>
+            <div className="stat-value">{avgGameMs !== null ? formatMs(avgGameMs) : '—'}</div>
           </div>
           <div className="stat-card">
             <div className="stat-label">Status</div>
@@ -362,35 +274,51 @@ export default function EventDetail() {
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
 
-        {/* Record game prompt */}
-        {!isCompleted && isCreator && players.length >= 2 && subGames.length === 0 && (
+        {/* Start-session prompt */}
+        {isScheduled && isCreator && players.length >= 2 && (
           <div className="card" style={{ padding: '28px 24px', textAlign: 'center', borderStyle: 'dashed' }}>
             <div style={{ fontSize: 32, marginBottom: 8 }}>🏓</div>
             <div style={{ fontWeight: 600, marginBottom: 4 }}>Ready to play!</div>
-            <div style={{ fontSize: 13, color: 'var(--gray-500)', marginBottom: 16 }}>{players.length} players have joined. Record your first game.</div>
-            <button className="btn btn-primary" onClick={() => setShowNewGame(true)}>+ Record First Game</button>
+            <div style={{ fontSize: 13, color: 'var(--gray-500)', marginBottom: 16 }}>{players.length} players have joined. Start the session when everyone's ready.</div>
+            <button className="btn btn-primary" onClick={handleStartSession}>Start Session</button>
           </div>
         )}
 
-        {/* Games */}
-        {subGames.length > 0 && (
+        {/* Start-game prompt (session running, no games yet) */}
+        {isInProgress && isCreator && completedSubGames.length === 0 && (
+          <div className="card" style={{ padding: '28px 24px', textAlign: 'center', borderStyle: 'dashed' }}>
+            <div style={{ fontSize: 32, marginBottom: 8 }}>🏓</div>
+            <div style={{ fontWeight: 600, marginBottom: 4 }}>Session is live</div>
+            <div style={{ fontSize: 13, color: 'var(--gray-500)', marginBottom: 16 }}>Start the first game whenever you're ready.</div>
+            <button className="btn btn-primary" onClick={() => setShowTeamPicker(true)}>+ Start First Game</button>
+          </div>
+        )}
+
+        {/* Completed games list */}
+        {completedSubGames.length > 0 && (
           <div>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
               <div style={{ fontFamily: 'var(--font-display)', fontWeight: 800, fontSize: 22 }}>
-                Games ({subGames.length})
+                Games ({completedSubGames.length})
               </div>
-              {!isCompleted && isCreator && (
-                <button className="btn btn-primary btn-sm" onClick={() => setShowNewGame(true)}>+ New Game</button>
+              {isInProgress && isCreator && (
+                <button className="btn btn-primary btn-sm" onClick={() => setShowTeamPicker(true)}>+ New Game</button>
               )}
             </div>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-              {subGames.map((sg, idx) => {
+              {completedSubGames.map((sg, idx) => {
                 const t1wins = sg.team1score > sg.team2score;
                 return (
                   <div key={sg.sgid} className="score-panel">
-                    <div className="score-panel-label">
-                      GAME {idx + 1} · {formatShortTime(sg.createdat)}
+                    <div className="score-panel-label" style={{ fontSize: 15, marginBottom: 6, display: 'flex', gap: 6, alignItems: 'center', flexWrap: 'wrap' }}>
+                      <span>GAME {idx + 1}</span>
+                      <span style={{ color: 'var(--gray-500)' }}>·</span>
+                      <span style={{ color: 'var(--green)' }}>{formatShortTime(sg.startedat)}</span>
+                      <span style={{ color: 'var(--gray-500)' }}>–</span>
+                      <span style={{ color: 'var(--yellow-dark)' }}>{formatShortTime(sg.endedat)}</span>
+                      <span style={{ color: 'var(--gray-500)' }}>·</span>
+                      <span style={{ color: 'var(--white)', fontWeight: 700 }}>{formatDuration(sg.startedat, sg.endedat)}</span>
                     </div>
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr auto 1fr', gap: 10, alignItems: 'center' }}>
                       <div>
@@ -466,11 +394,11 @@ export default function EventDetail() {
         </div>
       </div>
 
-      {showNewGame && (
-        <NewGameModal
+      {showTeamPicker && (
+        <TeamPickerModal
           players={players}
-          onClose={() => setShowNewGame(false)}
-          onRecorded={() => { show('Game recorded!', 'success'); load(); }}
+          onClose={() => setShowTeamPicker(false)}
+          onStarted={() => { show('Game started!', 'success'); load(); }}
           apiFetch={apiFetch}
           eventId={id!}
         />
