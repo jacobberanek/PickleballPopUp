@@ -5,11 +5,27 @@ export interface Game {
   location?: string;
   GameTime?: string;
   gametime?: string;
-  Status?: 'scheduled' | 'completed';
-  status?: 'scheduled' | 'completed';
+  Status?: 'scheduled' | 'in_progress' | 'completed';
+  status?: 'scheduled' | 'in_progress' | 'completed';
   CreatedBy?: string;
   createdby?: string;
   Type?: string;
+  StartedAt?: string;
+  startedat?: string;
+  EndedAt?: string;
+  endedat?: string;
+}
+
+export interface SubGame {
+  sgid: number;
+  team1: string[];
+  team2: string[];
+  team1score: number;
+  team2score: number;
+  createdat: string;
+  startedat?: string;
+  endedat?: string;
+  status?: 'not_started' | 'in_progress' | 'completed';
 }
 
 export interface Player {

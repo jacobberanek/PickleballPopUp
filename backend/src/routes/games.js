@@ -143,6 +143,9 @@ router.get("/:id/subgames", async (req, res) => {
         SubGames.Team1Score as team1score,
         SubGames.Team2Score as team2score,
         SubGames.CreatedAt as createdat,
+        SubGames.StartedAt as startedat,
+        SubGames.EndedAt as endedat,
+        SubGames.Status as status,
         sgp.Team as team,
         Users.Username as username
       FROM SubGames
@@ -161,6 +164,9 @@ router.get("/:id/subgames", async (req, res) => {
           team1score: row.team1score,
           team2score: row.team2score,
           createdat: row.createdat,
+          startedat: row.startedat,
+          endedat: row.endedat,
+          status: row.status,
           team1: [],
           team2: [],
         };
@@ -269,16 +275,6 @@ router.post("/:id/delete", async (req, res) => {
 
     await db.query("DELETE FROM GamePlayers WHERE GID = $1", [gameId]);
     await db.query("DELETE FROM Games WHERE GID = $1", [gameId]);
-    res.json({ success: true });
-  } catch (e) {
-    res.status(500).json({ error: e.message });
-  }
-});
-
-/* FINISH EVENT */
-router.post("/:id/finish", async (req, res) => {
-  try {
-    await db.query("UPDATE Games SET Status = 'completed' WHERE GID = $1", [req.params.id]);
     res.json({ success: true });
   } catch (e) {
     res.status(500).json({ error: e.message });
