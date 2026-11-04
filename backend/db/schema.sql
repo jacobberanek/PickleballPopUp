@@ -74,3 +74,60 @@ CREATE TABLE IF NOT EXISTS Messages (
     Content TEXT NOT NULL,
     SentAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+
+
+-- SMS scheduling: admin role, sessions, per-event player status, text log
+ALTER TABLE Users ADD COLUMN IF NOT EXISTS IsAdmin BOOLEAN NOT NULL DEFAULT FALSE;
+
+CREATE TABLE IF NOT EXISTS Sessions (
+    Token TEXT PRIMARY KEY,
+    UID INTEGER NOT NULL REFERENCES Users(UID) ON DELETE CASCADE,
+    CreatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Status: queued | invited | joined | declined | selected | not_selected
+ALTER TABLE GamePlayers ADD COLUMN IF NOT EXISTS Status VARCHAR(20) NOT NULL DEFAULT 'joined';
+ALTER TABLE GamePlayers ADD COLUMN IF NOT EXISTS InviteSendAt TIMESTAMP;
+ALTER TABLE GamePlayers ADD COLUMN IF NOT EXISTS InviteNote TEXT;
+ALTER TABLE Games ADD COLUMN IF NOT EXISTS ReminderSentAt TIMESTAMP;
+
+CREATE TABLE IF NOT EXISTS SmsLog (
+    ID SERIAL PRIMARY KEY,
+    UID INTEGER REFERENCES Users(UID) ON DELETE SET NULL,
+    Username TEXT,
+    GID INTEGER REFERENCES Games(GID) ON DELETE SET NULL,
+    Kind VARCHAR(20) NOT NULL,
+    Direction VARCHAR(3) NOT NULL DEFAULT 'out',
+    Body TEXT,
+    Status VARCHAR(20),
+    Error TEXT,
+    CreatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Weekly availability: Sunday blast asks which days (Mon-Fri) players can play; replies are stored per week.
+CREATE TABLE IF NOT EXISTS Settings (
+    Key VARCHAR(40) PRIMARY KEY,
+    Value TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS WeeklyPolls (
+    WeekStart DATE PRIMARY KEY,           -- the Monday of the week being scheduled
+    SentAt TIMESTAMP NOT NULL DEFAULT NOW(),
+    CutoffAt TIMESTAMP NOT NULL           -- replies after this are kept but marked late
+);
+
+CREATE TABLE IF NOT EXISTS Availability (
+    WeekStart DATE NOT NULL,
+    UID INTEGER NOT NULL REFERENCES Users(UID) ON DELETE CASCADE,
+    Days VARCHAR(20) NOT NULL DEFAULT '',   -- e.g. '1,3,5' (1 = Monday)
+    Status VARCHAR(10) NOT NULL,            -- days | none | unclear | manual
+    Raw TEXT,
+    Late BOOLEAN NOT NULL DEFAULT FALSE,
+    NotifiedDays VARCHAR(20) NOT NULL DEFAULT '', -- days the player was last told they are confirmed for
+    UpdatedAt TIMESTAMP NOT NULL DEFAULT NOW(),
+    PRIMARY KEY (WeekStart, UID)
+);
+
+-- A confirmed day becomes a normal event, so reminders, the calendar and scorekeeping all work on it.
+ALTER TABLE Games ADD COLUMN IF NOT EXISTS PollWeek DATE;
+ALTER TABLE Games ADD COLUMN IF NOT EXISTS PollDay SMALLINT;

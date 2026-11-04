@@ -1,6 +1,7 @@
-import { useState, FormEvent } from 'react';
+import { useEffect, useState, FormEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import LabeledInput from '../components/LabeledInput';
 
 function CourtIllustration() {
   return (
@@ -89,105 +90,23 @@ function CourtIllustration() {
   );
 }
 
-interface FloatingInputProps {
-  label: string;
-  type?: string;
-  value: string;
-  onChange: (value: string) => void;
-  numeric?: boolean;
-  maxLength?: number;
-  autoFocus?: boolean;
-}
-
-function FloatingInput({
-  label,
-  type = 'text',
-  value,
-  onChange,
-  numeric = false,
-  maxLength,
-  autoFocus = false,
-}: FloatingInputProps) {
-  const [focused, setFocused] = useState(false);
-
-  const floated = focused || value.length > 0;
-
-  const handleChange = (newValue: string) => {
-    if (numeric) {
-      newValue = newValue.replace(/\D/g, '');
-    }
-
-    if (maxLength) {
-      newValue = newValue.slice(0, maxLength);
-    }
-
-    onChange(newValue);
-  };
-
-  return (
-    <div
-      style={{
-        position: 'relative',
-        marginBottom: 36,
-      }}
-    >
-      <label
-        style={{
-          position: 'absolute',
-          left: 0,
-          pointerEvents: 'none',
-          top: floated ? -18 : 8,
-          fontSize: floated ? 12 : 18,
-          color: floated
-            ? 'var(--green)'
-            : 'var(--gray-500)',
-          fontWeight: floated ? 700 : 400,
-          letterSpacing: floated ? 0.4 : 0,
-          transition: 'all 0.18s ease',
-        }}
-      >
-        {label}
-      </label>
-
-      <input
-        type={type}
-        value={value}
-        onChange={(e) => handleChange(e.target.value)}
-        onFocus={() => setFocused(true)}
-        onBlur={() => setFocused(false)}
-        autoFocus={autoFocus}
-        inputMode={numeric ? 'numeric' : undefined}
-        maxLength={maxLength}
-        style={{
-          width: '100%',
-          border: 'none',
-          borderBottom: `2px solid ${
-            focused
-              ? 'var(--yellow)'
-              : 'var(--gray-300)'
-          }`,
-          background: 'transparent',
-          fontSize: 20,
-          padding: '8px 0',
-          outline: 'none',
-          fontFamily: 'var(--font-body)',
-          color: 'var(--charcoal)',
-          transition: 'border-color 0.18s ease',
-        }}
-      />
-    </div>
-  );
-}
-
 export default function Login() {
+  // /login?signup=1 opens the sign-up form directly (the link given to the text-message carriers as opt-in proof).
   const [mode, setMode] =
-    useState<'login' | 'register'>('login');
+    useState<'login' | 'register'>(new URLSearchParams(window.location.search).has('signup') ? 'register' : 'login');
 
   const [name, setName] = useState('');
   const [pin, setPin] = useState('');
   const [confirmPin, setConfirmPin] = useState('');
   const [phoneNumber, setPhoneNumber] = useState('');
-  const [smsOptIn, setSmsOptIn] = useState(false);
+  const [groupCode, setGroupCode] = useState('');
+  const [codeRequired, setCodeRequired] = useState(false);
+  const [smsOptIn, setSmsOptIn] = useState(false); // carriers require an unchecked box the person ticks themselves
+
+  useEffect(() => {
+    const base = import.meta.env.VITE_API_URL ?? 'http://localhost:3001';
+    fetch(`${base}/api/users/config`).then(r => r.json()).then(c => setCodeRequired(c.signupCodeRequired === true)).catch(() => {});
+  }, []);
 
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -216,17 +135,24 @@ export default function Login() {
       return;
     }
 
+    if (mode === 'register' && !/^\d{10,15}$/.test(phoneNumber)) {
+      setError('Enter your mobile phone number (10 digits)');
+      return;
+    }
+
     setLoading(true);
     setError('');
 
     try {
       if (mode === 'register') {
-        await register(name, pin, phoneNumber, smsOptIn);
+        await register(name, pin, phoneNumber, smsOptIn, groupCode);
       } else {
         await login(name, pin);
       }
 
-      navigate('/events');
+      // Back to the page the user was sent from (only an in-app path, never an outside address).
+      const next = new URLSearchParams(window.location.search).get('next');
+      navigate(next && next.startsWith('/') && !next.startsWith('//') ? next : '/events');
     } catch (err) {
       setError(
         err instanceof Error
@@ -269,9 +195,9 @@ export default function Login() {
             textAlign: 'center',
           }}
         >
-          BARN BOYS
+          BARNBOY
           <br />
-          SCOREBOOK
+          GROUP
         </div>
 
         <div
@@ -303,7 +229,7 @@ export default function Login() {
                 color: 'var(--charcoal)',
               }}
             >
-              BARN BOYS SCOREBOOK
+              BARNBOY GROUP
             </div>
           </div>
 
@@ -338,19 +264,21 @@ export default function Login() {
           <form onSubmit={handleSubmit}>
 
             {/* USERNAME */}
-            <FloatingInput
+            <LabeledInput
               label="Username"
               value={name}
               onChange={setName}
+              autoComplete="username"
               autoFocus
             />
 
             {/* PIN */}
-            <FloatingInput
+            <LabeledInput
               label="4-digit PIN"
               type="password"
               value={pin}
               onChange={setPin}
+              autoComplete={mode === 'register' ? 'new-password' : 'current-password'}
               numeric
               maxLength={4}
             />
@@ -358,25 +286,35 @@ export default function Login() {
             {/* CONFIRM PIN ONLY WHEN REGISTERING */}
             {mode === 'register' && (
               <>
-                <FloatingInput
+                <LabeledInput
                   label="Confirm PIN"
                   type="password"
                   value={confirmPin}
                   onChange={setConfirmPin}
+                  autoComplete="new-password"
                   numeric
                   maxLength={4}
                 />
-                <FloatingInput
-                  label="Phone number (optional)"
+                {codeRequired && (
+                  <LabeledInput
+                    label="Group code (ask the organizer)"
+                    value={groupCode}
+                    onChange={setGroupCode}
+                    autoComplete="off"
+                  />
+                )}
+                <LabeledInput
+                  label="Mobile phone number"
                   type="tel"
                   value={phoneNumber}
                   onChange={setPhoneNumber}
+                  autoComplete="tel"
                   numeric
                   maxLength={15}
                 />
                 <label style={{ display: 'flex', alignItems: 'flex-start', gap: 9, marginBottom: 22, fontSize: 13, color: 'var(--gray-700)' }}>
                   <input type="checkbox" checked={smsOptIn} onChange={e => setSmsOptIn(e.target.checked)} style={{ marginTop: 4, accentColor: 'var(--green)' }} />
-                  <span>Send me text notifications about my pickleball events.</span>
+                  <span>Text me about my pickleball events (about 1 to 3 messages a week). Message and data rates may apply. Reply STOP to opt out. See the <a href="/privacy" target="_blank" rel="noreferrer" style={{ textDecoration: 'underline' }}>Privacy Policy</a> and <a href="/terms" target="_blank" rel="noreferrer" style={{ textDecoration: 'underline' }}>Terms</a>.</span>
                 </label>
               </>
             )}
@@ -450,6 +388,10 @@ export default function Login() {
             </div>
 
           </form>
+
+          <div style={{ marginTop: 20, fontSize: 12, color: 'var(--gray-500)', textAlign: 'center' }}>
+            <a href="/privacy" style={{ textDecoration: 'underline' }}>Privacy</a> · <a href="/terms" style={{ textDecoration: 'underline' }}>Terms</a>
+          </div>
         </div>
       </div>
     </div>

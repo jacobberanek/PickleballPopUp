@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import Layout from './components/Layout';
 import Login from './pages/Login';
 import Events from './pages/Events';
@@ -7,11 +7,16 @@ import Leaderboard from './pages/Leaderboard';
 import GameHistory from './pages/GameHistory';
 import Calendar from './pages/Calendar';
 import Settings from './pages/Settings';
+import Admin from './pages/Admin';
+import Schedule from './pages/Schedule';
+import { Privacy, Terms } from './pages/Legal';
 import { AuthProvider, useAuth } from './context/AuthContext';
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { username } = useAuth();
-  if (!username) return <Navigate to="/login" replace />;
+  const here = useLocation();
+  // Not signed in: go to the login page and come back here afterwards (links in texts point at /schedule).
+  if (!username) return <Navigate to={`/login?next=${encodeURIComponent(here.pathname + here.search)}`} replace />;
   return <>{children}</>;
 }
 
@@ -19,6 +24,9 @@ function AppRoutes() {
   return (
     <Routes>
       <Route path="/login" element={<Login />} />
+      <Route path="/schedule" element={<Schedule />} />
+      <Route path="/privacy" element={<Privacy />} />
+      <Route path="/terms" element={<Terms />} />
       <Route path="/" element={<ProtectedRoute><Layout /></ProtectedRoute>}>
         <Route index element={<Navigate to="/events" replace />} />
         <Route path="events" element={<Events />} />
@@ -27,6 +35,7 @@ function AppRoutes() {
         <Route path="leaderboard" element={<Leaderboard />} />
         <Route path="history" element={<GameHistory />} />
         <Route path="settings" element={<Settings />} />
+        <Route path="admin" element={<Admin />} />
       </Route>
     </Routes>
   );
